@@ -122,7 +122,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);display:f
 .vbtn.on{background:var(--green);border-color:var(--green);color:#fff;}
 .v-sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
 .v-info{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);}
-.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px;position:relative;touch-action:pan-x pan-y;}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:40px;position:relative;touch-action:none;}
 .canvas-hint{
   position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
   background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.08);border-radius:20px;
@@ -1444,27 +1444,57 @@ function renderBank() {
     });
     div.addEventListener('dragend', () => { dragPid = null; });
 
-    /* Touch drag — iPad (HTML5 drag API mort sur iOS) */
-    let _tdTimer = null;
-    let _tdStartX = 0, _tdStartY = 0;
+    /* ── Touch interactions (iPad) ──
+       < 150ms + pas de mouvement  → tap  = assignation
+       > 150ms + mouvement         → drag = ghost suit le doigt
+       > 300ms + pas de mouvement  → long press = preview (pas d'assignation au relâchement)
+    */
+    let _tdTimer      = null; // 150ms : décide si drag ou long press
+    let _tdLpTimer    = null; // 300ms : déclenche la preview
+    let _tdStartX     = 0, _tdStartY = 0;
+    let _tdMoved      = false;
+    let _tdIsLongPress = false;
+
     div.addEventListener('pointerdown', e => {
       if (e.pointerType === 'mouse') return;
       _tdStartX = e.clientX; _tdStartY = e.clientY;
-      _tdTimer = setTimeout(() => {
-        div.setPointerCapture(e.pointerId);
-        _touchDragPid   = p.id;
-        _touchDragGhost = _createDragGhost(div);
-        _moveTouchGhost(e.clientX, e.clientY);
-        document.querySelector('.bank-panel').style.overflowY = 'hidden';
-      }, 150);
+      _tdMoved  = false;
+      _tdIsLongPress = false;
+
+      // Timer long press → preview (300ms, sans mouvement)
+      _tdLpTimer = setTimeout(() => {
+        if (!_tdMoved) {
+          _tdIsLongPress = true;
+          showThumbPreview(div, p.url);
+        }
+      }, 300);
+
+      // Timer drag → ghost (150ms + mouvement détecté dans pointermove)
+      _tdTimer = setTimeout(() => { _tdTimer = null; }, 150);
     }, { passive: true });
 
     div.addEventListener('pointermove', e => {
       if (e.pointerType === 'mouse') return;
-      // Annuler si mouvement avant activation (= scroll intentionnel)
-      if (_tdTimer && (Math.abs(e.clientX - _tdStartX) > 8 || Math.abs(e.clientY - _tdStartY) > 8)) {
-        clearTimeout(_tdTimer); _tdTimer = null;
+      const moved = Math.abs(e.clientX - _tdStartX) > 8 || Math.abs(e.clientY - _tdStartY) > 8;
+      if (!moved) return;
+
+      if (!_tdMoved) {
+        _tdMoved = true;
+        // Le doigt a bougé : annuler la preview long press
+        clearTimeout(_tdLpTimer); _tdLpTimer = null;
+        hideThumbPreview();
+        _tdIsLongPress = false;
+
+        // Activer le drag si le timer 150ms est écoulé (null = passé)
+        if (_tdTimer === null && _touchDragPid === null) {
+          div.setPointerCapture(e.pointerId);
+          _touchDragPid   = p.id;
+          _touchDragGhost = _createDragGhost(div);
+          _moveTouchGhost(e.clientX, e.clientY);
+          document.querySelector('.bank-panel').style.overflowY = 'hidden';
+        }
       }
+
       if (_touchDragPid === null) return;
       e.preventDefault();
       _moveTouchGhost(e.clientX, e.clientY);
@@ -1481,19 +1511,39 @@ function renderBank() {
     }, { passive: false });
 
     div.addEventListener('pointerup', e => {
-      clearTimeout(_tdTimer); _tdTimer = null;
-      if (_touchDragPid === null) return;
-      _touchDragGhost.style.display = 'none';
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      _touchDragGhost.style.display = '';
-      const canvasSlot = el && el.closest('.ov-photo');
-      const panelSlot  = el && el.closest('.slot-row:not(.dim)');
-      const slotName   = (canvasSlot && canvasSlot.dataset.slot) || (panelSlot && panelSlot.dataset.slot);
-      if (slotName) directAssign(slotName, _touchDragPid);
-      _cleanTouchDrag();
+      clearTimeout(_tdTimer);   _tdTimer = null;
+      clearTimeout(_tdLpTimer); _tdLpTimer = null;
+
+      // Long press → fermer la preview, pas d'assignation
+      if (_tdIsLongPress) {
+        hideThumbPreview();
+        _tdIsLongPress = false;
+        return;
+      }
+
+      // Drag actif → assigner si sur un slot
+      if (_touchDragPid !== null) {
+        _touchDragGhost.style.display = 'none';
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        _touchDragGhost.style.display = '';
+        const canvasSlot = el && el.closest('.ov-photo');
+        const panelSlot  = el && el.closest('.slot-row:not(.dim)');
+        const slotName   = (canvasSlot && canvasSlot.dataset.slot) || (panelSlot && panelSlot.dataset.slot);
+        if (slotName) directAssign(slotName, _touchDragPid);
+        _cleanTouchDrag();
+        return;
+      }
+
+      // Tap rapide (< 150ms, pas de mouvement) → le click natif gère l'assignation
     });
 
-    div.addEventListener('pointercancel', () => { clearTimeout(_tdTimer); _tdTimer = null; _cleanTouchDrag(); });
+    div.addEventListener('pointercancel', () => {
+      clearTimeout(_tdTimer);   _tdTimer = null;
+      clearTimeout(_tdLpTimer); _tdLpTimer = null;
+      hideThumbPreview();
+      _tdIsLongPress = false;
+      _cleanTouchDrag();
+    });
 
     grid.appendChild(div);
   });
