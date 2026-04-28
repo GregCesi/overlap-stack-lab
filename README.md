@@ -4,6 +4,8 @@ Outil de composition photo fait pour un projet client réel — [Jardin de Margu
 
 Fichier HTML autonome, zéro dépendance, zéro installation.
 
+**→ [Ouvrir directement depuis GitHub Pages](https://gregcesi.github.io/overlap-stack-lab/)**
+
 ---
 
 ## Ce que ça fait
