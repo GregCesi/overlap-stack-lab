@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overlap Stack Lab v4 — Jardin de Marguerite</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+button{font-family:inherit;cursor:pointer;}
+input[type=text],input[type=range]{font-family:inherit;}
+
+:root{
+  --green:       #2D6A4F;
+  --green-mid:   #52B788;
+  --green-light: #74C69D;
+  --green-sub:   rgba(45,106,79,0.18);
+  --amber:       #F59E0B;
+  --amber-sub:   rgba(245,158,11,0.15);
+  --bg:          #111110;
+  --bg-panel:    #191917;
+  --bg-card:     #222220;
+  --bg-card2:    #2A2A27;
+  --border:      rgba(255,255,255,0.07);
+  --border-md:   rgba(255,255,255,0.12);
+  --text:        #D0CFC8;
+  --text-dim:    #666;
+  --text-muted:  #444;
+  --font-disp:   'Cormorant Garamond', Georgia, serif;
+  --font-ui:     'DM Sans', system-ui, sans-serif;
+  --font-mono:   'JetBrains Mono', monospace;
+  --canvas-bg:   #1E1E1B;
+}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+
+body{font-family:var(--font-ui);background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+
+/* HEADER */
+.app-header{
+  height:46px;background:var(--bg-panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;z-index:20;
+}
+.logo{font-family:var(--font-disp);font-style:italic;font-size:17px;color:var(--green-light);font-weight:500;}
+.sep{width:1px;height:18px;background:var(--border);}
+.hd-label{font-size:11px;color:var(--text-dim);}
+.hd-version{font-size:9px;font-family:var(--font-mono);color:var(--amber);background:var(--amber-sub);padding:2px 7px;border-radius:20px;border:1px solid rgba(245,158,11,.25);}
+.photo-count{
+  margin-left:auto;font-size:10px;font-family:var(--font-mono);color:var(--text-muted);
+  background:var(--bg-card);padding:3px 10px;border-radius:20px;border:1px solid var(--border);
+}
+
+/* LAYOUT */
+.app-body{flex:1;display:grid;grid-template-columns:252px 1fr 272px;overflow:hidden;min-height:0;}
+.panel{overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;min-height:0;}
+.panel-hd{
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted);
+  font-weight:600;padding:12px 14px 9px;border-bottom:1px solid var(--border);
+  flex-shrink:0;display:flex;align-items:center;gap:7px;
+}
+.panel-hd svg{opacity:.45;}
+
+/* LEFT — BANK */
+.bank-panel{border-right:1px solid var(--border);background:var(--bg-panel);}
+.bank-context{
+  margin:8px 10px 4px;padding:7px 10px;border-radius:7px;
+  background:var(--green-sub);border:1px solid rgba(45,106,79,.25);
+  font-size:11px;color:var(--green-light);font-weight:500;
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+}
+.drop-zone{
+  margin:6px 10px 8px;border:1.5px dashed rgba(255,255,255,0.12);border-radius:10px;
+  padding:12px;text-align:center;cursor:pointer;transition:all 150ms ease;
+  flex-shrink:0;background:rgba(255,255,255,0.015);
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--green-light);background:var(--green-sub);}
+.drop-zone input{display:none;}
+.dz-icon{font-size:18px;margin-bottom:4px;opacity:.5;}
+.dz-text{font-size:11px;color:var(--text-dim);font-weight:500;}
+.dz-sub{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.bank-filter{padding:6px 10px;display:flex;gap:5px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
+.filter-chip{
+  padding:3px 10px;border-radius:20px;border:1px solid var(--border-md);background:transparent;
+  color:var(--text-dim);font-size:10px;font-weight:500;transition:all 120ms;
+}
+.filter-chip:hover{border-color:var(--green-light);color:var(--green-light);}
+.filter-chip.on{background:var(--green);border-color:var(--green);color:#fff;}
+.bank-grid{padding:8px 10px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;overflow-y:auto;}
+.bank-empty{grid-column:1/-1;text-align:center;padding:24px 12px;color:var(--text-muted);font-size:11px;line-height:1.6;}
+.thumb{
+  position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;cursor:pointer;
+  border:2px solid transparent;background:var(--bg-card2);transition:border-color 120ms,transform 120ms;
+}
+.thumb:hover{transform:scale(1.04);border-color:rgba(255,255,255,.15);}
+.thumb.is-assigned::after{content:'';position:absolute;inset:0;background:rgba(45,106,79,.35);pointer-events:none;}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.thumb-badge{
+  position:absolute;bottom:3px;left:3px;font-family:var(--font-mono);font-size:7px;
+  color:rgba(255,255,255,.75);background:rgba(0,0,0,.65);padding:2px 5px;border-radius:3px;pointer-events:none;
+}
+.thumb-slot-badge{position:absolute;bottom:3px;right:3px;pointer-events:none;}
+.thumb-del{
+  position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;
+  background:rgba(0,0,0,.7);color:rgba(255,255,255,.6);font-size:12px;line-height:1;
+  display:none;align-items:center;justify-content:center;border:none;transition:all 100ms;z-index:5;
+}
+.thumb:hover .thumb-del{display:flex;}
+.thumb-del:hover{background:rgba(214,40,40,.8);color:#fff;}
+
+/* CENTER — CANVAS */
+.canvas-panel{background:var(--bg);flex-direction:column;border-right:1px solid var(--border);}
+.toolbar{
+  padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;
+  gap:7px;flex-shrink:0;background:#161614;flex-wrap:wrap;
+}
+.vbtn{
+  padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:transparent;
+  color:var(--text-dim);font-size:11px;font-weight:500;transition:all 120ms;
+}
+.vbtn:hover{border-color:var(--green-light);color:var(--green-light);}
+.vbtn.on{background:var(--green);border-color:var(--green);color:#fff;}
+.v-sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
+.v-info{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px;position:relative;}
+.canvas-hint{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.08);border-radius:20px;
+  padding:5px 16px;font-size:10.5px;color:var(--text-dim);pointer-events:none;white-space:nowrap;
+  transition:all 200ms ease;
+}
+
+/* ══ OVERLAP STACK ══ */
+.overlap-canvas{
+  position:relative;background:var(--canvas-bg);border-radius:16px;
+  overflow:visible;width:660px;flex-shrink:0;
+}
+.ov-photo{
+  position:absolute;border-radius:6px;
+  box-shadow:0 16px 40px rgba(0,0,0,.5);
+  display:flex;align-items:flex-end;padding:7px 9px;overflow:hidden;cursor:pointer;
+  transition:transform 200ms cubic-bezier(.34,1.56,.64,1),box-shadow 200ms ease;
+  user-select:none;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+.ov-photo:hover{
+  transform:translateY(-8px) scale(1.02) translateZ(0) !important;
+  box-shadow:0 24px 48px rgba(0,0,0,.6) !important;
+  z-index:99 !important;
+}
+.ov-photo.slot-sel{outline:3px solid var(--green-light);outline-offset:4px;z-index:100 !important;}
+.ov-photo.drag-target{outline:3px solid var(--green-light);outline-offset:4px;z-index:101 !important;}
+.slot-row.drag-target{border-color:var(--green-light) !important;background:rgba(45,106,79,.2) !important;}
+
+.ov-main  {background-color:#3D4A3B;}
+.ov-second{background-color:#4A4533;}
+.ov-detail{background-color:#3D3028;}
+.ov-open  {background-color:#2E3D3C;}
+.ov-extra {background-color:#2B3840;}
+
+.ov-label{
+  font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;
+  letter-spacing:.06em;font-family:var(--font-mono);line-height:1;
+  text-shadow:0 1px 6px rgba(0,0,0,.95);pointer-events:none;position:relative;z-index:2;
+}
+
+/* V01 */
+.v01-main  {top:3%;left:3%;width:72%;height:75%;}
+.v01-second{bottom:3%;right:3%;width:54%;height:52%;border:4px solid var(--canvas-bg);}
+.v01-detail{bottom:5%;left:8%;width:28%;height:36%;transform:rotate(-1.5deg) translateZ(0);z-index:10;border:4px solid var(--canvas-bg);}
+
+/* V02 */
+.v02-detail{top:3%;left:3%;width:38%;height:48%;transform:rotate(-2.5deg) translateZ(0);z-index:10;}
+.v02-main  {top:13%;left:18%;width:62%;height:68%;transform:rotate(.5deg) translateZ(0);}
+.v02-second{bottom:3%;right:3%;width:48%;height:46%;transform:rotate(1.8deg) translateZ(0);border:4px solid var(--canvas-bg);}
+
+/* V03 */
+.v03-main  {top:3%;left:3%;width:65%;height:78%;transform:rotate(-.5deg) translateZ(0);}
+.v03-second{top:6%;right:3%;width:38%;height:44%;transform:rotate(2deg) translateZ(0);border:4px solid var(--canvas-bg);}
+.v03-open  {bottom:3%;right:8%;width:44%;height:40%;transform:rotate(-1.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:8;}
+.v03-detail{bottom:6%;left:12%;width:28%;height:32%;transform:rotate(2.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:12;}
+
+/* V04 */
+.v04-main  {top:3%;left:3%;width:58%;height:70%;transform:rotate(-.3deg) translateZ(0);}
+.v04-open  {top:8%;left:25%;width:42%;height:52%;transform:rotate(-1.8deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:5;}
+.v04-second{top:4%;right:3%;width:38%;height:46%;transform:rotate(1.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:6;}
+.v04-detail{bottom:3%;left:5%;width:28%;height:34%;transform:rotate(-2deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:10;}
+.v04-extra {bottom:6%;right:3%;width:36%;height:36%;transform:rotate(2.2deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:9;}
+
+/* V05 */
+.v05-main  {top:6%;left:10%;width:68%;height:70%;transform:rotate(.8deg) translateZ(0);}
+.v05-detail{top:3%;left:3%;width:32%;height:40%;transform:rotate(-3deg) translateZ(0);z-index:10;}
+.v05-second{bottom:3%;right:3%;width:50%;height:46%;transform:rotate(2.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:8;}
+.v05-open  {bottom:3%;left:5%;width:36%;height:38%;transform:rotate(-1.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:7;}
+
+.canvas-label{text-align:center;margin-top:14px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);}
+
+/* ══ IMAGE INSIDE SLOT ══ */
+.ov-photo-img{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  transform-origin:center center;
+  display:block;
+  pointer-events:none;
+  user-select:none;
+  will-change:transform;
+  border-radius:inherit;
+}
+
+/* Edit button — appears on hover when photo is assigned */
+.img-edit-btn{
+  position:absolute;top:6px;right:6px;
+  width:26px;height:26px;border-radius:6px;
+  background:rgba(0,0,0,0.78);border:1px solid rgba(255,255,255,0.18);
+  color:rgba(255,255,255,0.85);font-size:12px;
+  display:none;align-items:center;justify-content:center;
+  z-index:30;cursor:pointer;
+  backdrop-filter:blur(6px);
+  transition:background 100ms,border-color 100ms,color 100ms;
+  padding:0;line-height:1;flex-shrink:0;
+}
+.ov-photo:hover .img-edit-btn{display:flex;}
+.img-edit-btn:hover{background:rgba(245,158,11,0.9);border-color:var(--amber);color:#fff;}
+
+/* Image edit active state */
+.ov-photo.img-editing{
+  outline:2.5px solid var(--amber) !important;
+  outline-offset:3px;
+  cursor:grab !important;
+  z-index:150 !important;
+  transition:none !important;
+  /* CRITICAL: reveal the full image beyond container boundaries */
+  overflow:visible !important;
+}
+.ov-photo.img-editing:hover{
+  transform:translateZ(0) !important;
+  box-shadow:0 0 0 4px rgba(245,158,11,0.25), 0 16px 40px rgba(0,0,0,.5) !important;
+}
+.ov-photo.img-editing .img-edit-btn{
+  display:flex;background:rgba(245,158,11,0.9);border-color:var(--amber);color:#fff;
+}
+.ov-photo.img-editing-grabbing{cursor:grabbing !important;}
+
+/* Crop frame overlay — appears inside the slot during edit, casts shadow outward */
+.img-crop-frame{
+  position:absolute;inset:0;pointer-events:none;z-index:12;
+  border-radius:inherit;
+  /* The box-shadow spreads outside the frame (visible because overflow:visible on parent) */
+  box-shadow:0 0 0 9999px rgba(0,0,0,0.52);
+  /* Bright border shows the crop boundary */
+  border:1.5px solid rgba(245,158,11,0.75);
+}
+
+/* Image editing badge */
+.img-editing-badge{
+  position:absolute;bottom:6px;right:6px;
+  background:rgba(245,158,11,0.92);color:#000;
+  font-family:var(--font-mono);font-size:7.5px;font-weight:700;
+  padding:2px 6px;border-radius:3px;letter-spacing:.08em;text-transform:uppercase;
+  pointer-events:none;z-index:25;
+  animation:badge-pulse 2s ease-in-out infinite;
+}
+@keyframes badge-pulse{
+  0%,100%{opacity:1;}
+  50%{opacity:.65;}
+}
+
+/* ══ FLOATING IMAGE TOOLBAR ══ */
+#img-toolbar{
+  position:fixed;z-index:600;
+  background:rgba(13,13,11,0.97);
+  border:1px solid rgba(245,158,11,0.3);
+  border-radius:11px;
+  padding:7px 10px;
+  display:none;
+  align-items:center;gap:5px;
+  font-size:11px;color:var(--text);
+  box-shadow:0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+  backdrop-filter:blur(16px);
+  user-select:none;white-space:nowrap;
+  pointer-events:all;
+}
+
+/* Drag handle for toolbar */
+.it-drag{
+  width:20px;height:24px;display:flex;align-items:center;justify-content:center;
+  cursor:move;opacity:.3;font-size:11px;letter-spacing:-1px;flex-shrink:0;
+}
+.it-drag:hover{opacity:.6;}
+
+.it-sep{width:1px;height:18px;background:rgba(255,255,255,0.09);flex-shrink:0;margin:0 2px;}
+
+.it-label{
+  font-size:8.5px;font-family:var(--font-mono);color:var(--amber);
+  text-transform:uppercase;letter-spacing:.12em;flex-shrink:0;
+}
+
+.it-btn{
+  width:26px;height:26px;border-radius:6px;flex-shrink:0;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);
+  color:var(--text);font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 100ms;padding:0;line-height:1;
+}
+.it-btn:hover{background:rgba(255,255,255,0.11);border-color:rgba(255,255,255,0.18);color:#fff;}
+.it-btn.wide{width:auto;padding:0 9px;font-size:10px;font-family:var(--font-mono);letter-spacing:.04em;}
+.it-btn.active{background:var(--amber-sub);border-color:rgba(245,158,11,.4);color:var(--amber);}
+.it-btn.danger:hover{background:rgba(214,40,40,0.2);border-color:rgba(214,40,40,0.4);color:#F87171;}
+
+.it-zoom-val{
+  font-family:var(--font-mono);font-size:10.5px;min-width:40px;
+  text-align:center;color:var(--text);
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);border-radius:5px;
+  padding:3px 6px;flex-shrink:0;
+}
+
+/* Zoom slider */
+.it-slider-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.it-slider{
+  -webkit-appearance:none;
+  width:72px;height:3px;
+  background:rgba(255,255,255,0.1);border-radius:2px;
+  outline:none;cursor:pointer;flex-shrink:0;
+}
+.it-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:11px;height:11px;border-radius:50%;
+  background:var(--amber);cursor:grab;border:2px solid rgba(0,0,0,0.4);
+  box-shadow:0 0 0 2px rgba(245,158,11,0.25);
+  transition:box-shadow 100ms;
+}
+.it-slider::-webkit-slider-thumb:active{cursor:grabbing;box-shadow:0 0 0 4px rgba(245,158,11,0.3);}
+
+/* RIGHT PANEL */
+.right-panel{background:var(--bg-panel);display:flex;flex-direction:column;}
+.section-list{padding:8px 10px;display:flex;flex-direction:column;gap:3px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sec-row{
+  display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;cursor:pointer;
+  font-size:12px;font-weight:500;color:var(--text-dim);transition:all 110ms;
+}
+.sec-row:hover{background:rgba(255,255,255,.04);color:var(--text);}
+.sec-row.on{background:var(--green-sub);color:var(--green-light);}
+.sec-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.sec-row.on .sec-dot{background:var(--green-light);}
+.sec-badge{margin-left:auto;font-size:9px;font-family:var(--font-mono);opacity:.4;}
+.btn-add-sec{
+  margin:7px 10px 10px;padding:6px;background:transparent;border:1px dashed rgba(255,255,255,.1);
+  border-radius:7px;color:var(--text-muted);font-size:11px;transition:all 120ms;text-align:center;flex-shrink:0;
+}
+.btn-add-sec:hover{border-color:var(--green-light);color:var(--green-light);}
+.slots-wrap{padding:8px 10px;display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.slot-row{
+  display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;
+  border:1.5px solid transparent;background:var(--bg-card);cursor:pointer;transition:all 110ms;
+}
+.slot-row:hover{border-color:var(--border-md);}
+.slot-row.on{border-color:var(--green-light);background:rgba(45,106,79,.1);}
+.slot-row.dim{opacity:.28;pointer-events:none;}
+.slot-row.editing{border-color:var(--amber) !important;background:var(--amber-sub) !important;}
+.slot-prev{width:38px;height:30px;border-radius:4px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.slot-prev img{width:100%;height:100%;object-fit:cover;display:block;}
+.slot-prev-color{width:100%;height:100%;border-radius:4px;}
+.slot-body{flex:1;min-width:0;}
+.slot-name{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:5px;}
+.slot-file{font-size:10px;color:var(--text-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.slot-clear{
+  width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.06);border:none;
+  color:var(--text-dim);font-size:14px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all 100ms;padding:0;line-height:1;
+}
+.slot-clear:hover{background:rgba(214,40,40,.35);color:#F87171;}
+.slot-edit-img-btn{
+  width:18px;height:18px;border-radius:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);
+  color:var(--amber);font-size:10px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all 100ms;padding:0;line-height:1;cursor:pointer;
+}
+.slot-edit-img-btn:hover{background:rgba(245,158,11,.25);border-color:rgba(245,158,11,.5);}
+.cat-dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.hint-box{margin:10px;padding:10px 12px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);font-size:11px;color:var(--text-dim);line-height:1.6;flex-shrink:0;}
+.hint-box.ah{border-color:rgba(45,106,79,.4);background:rgba(45,106,79,.08);color:var(--text);}
+.hint-box.edit-img{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.06);color:var(--text);}
+.export-block{margin-top:auto;padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.btn-export{padding:8px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;transition:background 120ms;}
+.btn-export:hover{background:#1B4332;}
+.btn-copy{padding:7px;background:transparent;border:1px solid var(--border-md);color:var(--text-dim);border-radius:7px;font-size:11px;transition:all 120ms;}
+.btn-copy:hover{border-color:var(--green-light);color:var(--green-light);}
+.btn-clear-sec{padding:7px;background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:7px;font-size:11px;transition:all 120ms;}
+.btn-clear-sec:hover{border-color:rgba(214,40,40,.4);color:#F87171;}
+.sb{font-family:var(--font-mono);font-size:8px;padding:1px 5px;border-radius:3px;text-transform:uppercase;}
+.sb-main  {background:rgba(61,74,59,.5);color:#74C69D;}
+.sb-second{background:rgba(74,69,51,.5);color:#D4AD72;}
+.sb-detail{background:rgba(61,48,40,.5);color:#E8C4A0;}
+.sb-open  {background:rgba(46,61,60,.5);color:#7EC8C8;}
+.sb-extra {background:rgba(43,56,64,.5);color:#93C5D5;}
+/* ══ THUMB HOVER PREVIEW ══ */
+#thumb-preview{
+  position:fixed;z-index:400;
+  display:none;pointer-events:none;
+  border-radius:10px;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,0.09);
+  background:var(--bg-card2);
+  max-width:480px;
+  animation:preview-in 130ms cubic-bezier(.22,1,.36,1);
+}
+#thumb-preview img{
+  display:block;width:100%;height:auto;
+}
+@keyframes preview-in{
+  from{opacity:0;transform:translateX(-6px) scale(0.97);}
+  to  {opacity:1;transform:translateX(0)   scale(1);}
+}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--bg-panel);border:1px solid var(--border-md);border-radius:12px;padding:24px;width:320px;}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:16px;}
+.modal-input{width:100%;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border-md);border-radius:7px;color:var(--text);font-size:13px;outline:none;margin-bottom:12px;transition:border-color 120ms;}
+.modal-input:focus{border-color:var(--green-light);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+.btn-ok{padding:7px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;}
+.btn-ok:hover{background:#1B4332;}
+.btn-cancel{padding:7px 18px;background:transparent;border:1px solid var(--border-md);color:var(--text-dim);border-radius:7px;font-size:12px;transition:all 120ms;}
+.btn-cancel:hover{border-color:var(--text-dim);color:var(--text);}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">Overlap Stack Lab</div>
+  <div class="sep"></div>
+  <div class="hd-label">Jardin de Marguerite — DS v1.1</div>
+  <div class="hd-version">v4 — Image Edit</div>
+  <div class="photo-count" id="photo-count">0 photo</div>
+  <div id="save-indicator" style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);display:flex;align-items:center;gap:5px;"></div>
+</header>
+
+<div class="app-body">
+
+  <!-- GAUCHE : BANQUE -->
+  <div class="panel bank-panel">
+    <div class="panel-hd">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Banque Photos
+    </div>
+    <div class="bank-context" id="bank-ctx">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span id="bank-ctx-label">—</span>
+    </div>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="dz-icon">⬆</div>
+      <div class="dz-text">Glissez vos photos ici</div>
+      <div class="dz-sub">Propres à cette section</div>
+      <input type="file" id="file-input" multiple accept="image/*">
+    </div>
+    <div class="bank-filter">
+      <button class="filter-chip on" data-f="all" onclick="setFilter('all')">Toutes</button>
+      <button class="filter-chip" data-f="unassigned" onclick="setFilter('unassigned')">Non assignées</button>
+    </div>
+    <div class="bank-grid" id="bank-grid">
+      <div class="bank-empty" id="bank-empty">
+        Ajoutez des photos pour cette section.<br>
+        <span style="color:var(--text-muted);font-size:10px;">JPG, PNG, WebP…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTRE : CANVAS -->
+  <div class="panel canvas-panel">
+    <div class="toolbar">
+      <button class="vbtn on" data-v="v01" onclick="setVariant('v01')">V01 · Base</button>
+      <button class="vbtn" data-v="v02" onclick="setVariant('v02')">V02 · Diagonal</button>
+      <div class="v-sep"></div>
+      <button class="vbtn" data-v="v03" onclick="setVariant('v03')">V03 · Quad</button>
+      <button class="vbtn" data-v="v05" onclick="setVariant('v05')">V05 · Asymétrique</button>
+      <div class="v-sep"></div>
+      <button class="vbtn" data-v="v04" onclick="setVariant('v04')">V04 · Penta</button>
+      <span class="v-info" id="v-info">3 slots</span>
+    </div>
+    <div class="canvas-wrap" id="canvas-wrap"></div>
+    <div class="canvas-hint" id="canvas-hint">Cliquez sur un slot, puis sur une photo dans la banque</div>
+  </div>
+
+  <!-- DROITE : SECTIONS + SLOTS -->
+  <div class="panel right-panel">
+    <div class="panel-hd">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Sections
+    </div>
+    <div class="section-list" id="section-list"></div>
+    <button class="btn-add-sec" onclick="openModal()">+ Nouvelle section</button>
+    <div class="panel-hd">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Slots
+      <span id="slots-filled" style="margin-left:auto;font-size:9px;font-family:var(--font-mono);color:var(--text-muted);font-weight:400;letter-spacing:.05em;text-transform:none;"></span>
+    </div>
+    <div class="slots-wrap" id="slots-wrap"></div>
+    <div class="hint-box" id="hint-box">
+      Cliquez sur un slot pour l'activer, puis sur une photo pour l'assigner.
+    </div>
+    <div class="export-block">
+      <button class="btn-export" onclick="doExport()">⬇ Exporter JSON</button>
+      <button class="btn-copy" onclick="doCopy()">📋 Copier la config</button>
+      <button class="btn-clear-sec" onclick="clearSection()">✕ Vider cette section</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- THUMB HOVER PREVIEW -->
+<div id="thumb-preview"><img src="" alt=""></div>
+
+<!-- MODAL NOUVELLE SECTION -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title">Nouvelle section</div>
+    <input class="modal-input" type="text" id="modal-input" placeholder="ex : Terrasse est" maxlength="40">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-ok" onclick="confirmSection()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING IMAGE EDIT TOOLBAR -->
+<div id="img-toolbar">
+  <div class="it-drag" id="it-drag" title="Déplacer la toolbar">⠿</div>
+  <span class="it-label">⌖ Image</span>
+  <div class="it-sep"></div>
+
+  <!-- Zoom controls -->
+  <button class="it-btn" onclick="imgZoomStep(-0.01)" title="Dézoomer (–)">−</button>
+  <div class="it-slider-wrap">
+    <input class="it-slider" type="range" id="img-zoom-slider" min="5" max="800" value="100"
+      oninput="imgZoomSlider(this.value)" title="Zoom">
+  </div>
+  <button class="it-btn" onclick="imgZoomStep(0.01)" title="Zoomer (+)">+</button>
+  <div class="it-zoom-val" id="img-zoom-val">100%</div>
+
+  <div class="it-sep"></div>
+
+  <!-- Preset zooms -->
+  <button class="it-btn wide" onclick="imgFitAll()" title="Voir la photo entière (hors cadre inclus)">⊞ Tout voir</button>
+  <button class="it-btn wide" onclick="imgReset()" title="Couverture par défaut (centré)">⟳ Fit</button>
+  <button class="it-btn wide" onclick="imgZoomTo(2.0)" title="Zoomer ×2">2×</button>
+
+  <div class="it-sep"></div>
+
+  <!-- Pan reset -->
+  <button class="it-btn wide" onclick="imgResetPan()" title="Recentrer l'image">↺ Centre</button>
+
+  <div class="it-sep"></div>
+
+  <!-- Rotation -->
+  <span class="it-label">↻ Rot.</span>
+  <button class="it-btn" onclick="imgRotateStep(-1)" title="-1°">−</button>
+  <div class="it-slider-wrap">
+    <input class="it-slider" type="range" id="img-rot-slider" min="-180" max="180" value="0"
+      oninput="imgRotateSlider(this.value)" title="Rotation">
+  </div>
+  <button class="it-btn" onclick="imgRotateStep(1)" title="+1°">+</button>
+  <div class="it-zoom-val" id="img-rot-val">0°</div>
+  <button class="it-btn wide" onclick="imgResetRotation()" title="Remettre à 0°">↺ 0°</button>
+
+  <div class="it-sep"></div>
+
+  <!-- Flip horizontal -->
+  <button class="it-btn wide" id="img-flip-btn" onclick="imgFlipH()" title="Miroir horizontal">⇄ Flip</button>
+
+  <div class="it-sep"></div>
+
+  <!-- Exit -->
+  <button class="it-btn danger" onclick="exitEditImage()" title="Quitter l'édition (Échap)">×</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const S = {
+  sections: [
+    { id:'jardin-anglais',       name:'Jardin d\'inspiration anglaise', variant:'v01', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'bassin-riviere',       name:'Bassin & petite rivière',        variant:'v02', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'bosquet',              name:'Le bosquet',                     variant:'v03', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'potager',              name:'Le potager',                     variant:'v01', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'jardin-mediterraneen', name:'Jardin méditerranéen',           variant:'v02', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'sejour',               name:'Le séjour',                     variant:'v03', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'chambre',              name:'La chambre',                     variant:'v01', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'cuisine',              name:'La cuisine',                     variant:'v02', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'salle-de-bains',       name:'Salle de bains',                variant:'v01', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+    { id:'terrasse',             name:'Terrasse & extérieurs',          variant:'v03', slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} },
+  ],
+  activeSection: 'jardin-anglais',
+  selectedSlot: null,
+  bankFilter: 'all',
+  _pid: 1,
+};
+
+const VARIANTS = {
+  v01:{ label:'V01 · 3 photos · Base',           slots:['main','second','detail'],               h:510 },
+  v02:{ label:'V02 · 3 photos · Diagonal Float', slots:['main','second','detail'],               h:488 },
+  v03:{ label:'V03 · 4 photos · Quad Stack',     slots:['main','second','detail','open'],        h:533 },
+  v04:{ label:'V04 · 5 photos · Penta Cascade',  slots:['main','second','detail','open','extra'],h:555 },
+  v05:{ label:'V05 · 4 photos · Asymétrique',    slots:['main','second','detail','open'],        h:510 },
+};
+
+const SLOT_BG = {
+  main:'#3D4A3B', second:'#4A4533', detail:'#3D3028', open:'#2E3D3C', extra:'#2B3840',
+};
+
+/* ── Getters ── */
+const sec    = ()   => S.sections.find(s => s.id === S.activeSection);
+const vkey   = ()   => sec().variant;
+const vdef   = ()   => VARIANTS[vkey()];
+const photo  = id   => sec().photos.find(p => p.id === id);
+const slotPh = slot => { const pid = sec().slots[slot]; return pid ? photo(pid) : null; };
+const assignedSlot = pid => Object.entries(sec().slots).find(([,v])=>v===pid)?.[0]||null;
+
+/* ══════════════════════════════════════════════════════
+   IMAGE TRANSFORM STATE
+══════════════════════════════════════════════════════ */
+function getImgT(slot) {
+  if (!sec().imgTransforms) sec().imgTransforms = {};
+  return sec().imgTransforms[slot] || { scale:1, x:0, y:0, rotation:0, flipH:false };
+}
+
+function setImgT(slot, t) {
+  if (!sec().imgTransforms) sec().imgTransforms = {};
+  sec().imgTransforms[slot] = {
+    scale: t.scale, x: t.x, y: t.y,
+    rotation: t.rotation || 0, flipH: !!t.flipH,
+    cs: t.cs || null, nW: t.nW || null, nH: t.nH || null,
+  };
+}
+
+function applyImgTransform(slot) {
+  const imgEl = document.querySelector(`.ov-photo[data-slot="${slot}"] .ov-photo-img`);
+  if (!imgEl) return;
+  const t = getImgT(slot);
+  const rot   = t.rotation || 0;
+  const flipX = t.flipH ? -1 : 1;
+  if (IMG_EDIT.active && IMG_EDIT.slot === slot) {
+    const cs = IMG_EDIT.coverScale || 1;
+    imgEl.style.transform = `translate(${t.x}px,${t.y}px) rotate(${rot}deg) scaleX(${flipX}) scale(${cs * t.scale})`;
+  } else {
+    imgEl.style.transform = `translate(${t.x}px,${t.y}px) rotate(${rot}deg) scaleX(${flipX}) scale(${t.scale})`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   IMAGE EDITING STATE & LOGIC
+══════════════════════════════════════════════════════ */
+const IMG_EDIT = {
+  active: false,
+  slot: null,
+  panning: false,
+  startX: 0, startY: 0,
+  startTX: 0, startTY: 0,
+};
+
+function enterEditImage(evt, slot) {
+  evt.stopPropagation();
+  const p = slotPh(slot);
+  if (!p) return;
+  if (IMG_EDIT.active && IMG_EDIT.slot !== slot) exitEditImageSilent();
+
+  IMG_EDIT.active = true;
+  IMG_EDIT.slot = slot;
+  S.selectedSlot = null;
+
+  // Read natural dimensions from the already-loaded img in the DOM
+  const container = document.querySelector(`.ov-photo[data-slot="${slot}"]`);
+  const imgEl = container ? container.querySelector('.ov-photo-img') : null;
+
+  if (imgEl && imgEl.naturalWidth) {
+    const containerW = container.offsetWidth;
+    const containerH = container.offsetHeight;
+    const naturalW = imgEl.naturalWidth;
+    const naturalH = imgEl.naturalHeight;
+    // coverScale = the scale object-fit:cover uses internally
+    const coverScale = Math.max(containerW / naturalW, containerH / naturalH);
+    IMG_EDIT.coverScale = coverScale;
+    IMG_EDIT.naturalW = naturalW;
+    IMG_EDIT.naturalH = naturalH;
+    IMG_EDIT.containerW = containerW;
+    IMG_EDIT.containerH = containerH;
+    // Persist dimensions so rendering stays correct after exiting edit mode
+    const existingT = getImgT(slot);
+    setImgT(slot, { ...existingT, cs: coverScale, nW: naturalW, nH: naturalH });
+    switchImgToEditMode(container, imgEl, containerW, containerH, naturalW, naturalH, slot);
+  }
+
+  renderSlots();
+  updateHint();
+  requestAnimationFrame(() => { updateImgToolbar(); showImgToolbar(); });
+}
+
+/* Switch img element from cover mode (100%×100% object-fit:cover)
+   to natural-size mode (full image visible, overflow shown) */
+function switchImgToEditMode(container, imgEl, containerW, containerH, naturalW, naturalH, slot) {
+  // Natural img centered in container
+  const leftOffset = (containerW - naturalW) / 2;
+  const topOffset  = (containerH - naturalH) / 2;
+  imgEl.style.width       = naturalW + 'px';
+  imgEl.style.height      = naturalH + 'px';
+  imgEl.style.objectFit   = 'none';
+  imgEl.style.inset       = 'auto';
+  imgEl.style.left        = leftOffset + 'px';
+  imgEl.style.top         = topOffset  + 'px';
+  imgEl.style.borderRadius = '0'; // no radius clipping on the img itself
+
+  // Add crop frame overlay (shows boundary, casts shadow outside)
+  if (!container.querySelector('.img-crop-frame')) {
+    const frame = document.createElement('div');
+    frame.className = 'img-crop-frame';
+    container.appendChild(frame);
+  }
+
+  // Apply transform in natural mode
+  applyImgTransform(slot);
+}
+
+/* Restore img to cover mode and remove crop frame */
+function restoreImgToCoverMode(container, imgEl, slot) {
+  imgEl.style.width       = '100%';
+  imgEl.style.height      = '100%';
+  imgEl.style.objectFit   = 'cover';
+  imgEl.style.inset       = '0';
+  imgEl.style.left        = '';
+  imgEl.style.top         = '';
+  imgEl.style.borderRadius = '';
+  const t = getImgT(slot);
+  const rot = t.rotation || 0;
+  const flipX = t.flipH ? -1 : 1;
+  imgEl.style.transform = `translate(${t.x}px,${t.y}px) rotate(${rot}deg) scaleX(${flipX}) scale(${t.scale})`;
+  const frame = container.querySelector('.img-crop-frame');
+  if (frame) frame.remove();
+}
+
+function exitEditImage() {
+  // Restore the DOM before clearing state
+  if (IMG_EDIT.active && IMG_EDIT.slot) {
+    const container = document.querySelector(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+    if (container) {
+      const imgEl = container.querySelector('.ov-photo-img');
+      if (imgEl) restoreImgToCoverMode(container, imgEl, IMG_EDIT.slot);
+    }
+  }
+  IMG_EDIT.active = false;
+  IMG_EDIT.slot = null;
+  IMG_EDIT.panning = false;
+  hideImgToolbar();
+  saveState();
+  renderCanvas();
+  renderSlots();
+  updateHint();
+}
+
+function exitEditImageSilent() {
+  if (IMG_EDIT.active && IMG_EDIT.slot) {
+    const container = document.querySelector(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+    if (container) {
+      const imgEl = container.querySelector('.ov-photo-img');
+      if (imgEl) restoreImgToCoverMode(container, imgEl, IMG_EDIT.slot);
+    }
+  }
+  IMG_EDIT.active = false;
+  IMG_EDIT.slot = null;
+  IMG_EDIT.panning = false;
+  IMG_EDIT.coverScale = 1;
+  saveState();
+  hideImgToolbar();
+}
+
+/* ── Toolbar positioning ── */
+let _toolbarDragging = false;
+let _tdx = 0, _tdy = 0;
+
+function showImgToolbar() {
+  const tb = document.getElementById('img-toolbar');
+  tb.style.display = 'flex';
+  repositionToolbar();
+}
+
+function hideImgToolbar() {
+  document.getElementById('img-toolbar').style.display = 'none';
+}
+
+function repositionToolbar() {
+  if (!IMG_EDIT.slot) return;
+  const slotEl = document.querySelector(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+  const tb = document.getElementById('img-toolbar');
+  if (!slotEl || !tb) return;
+  const rect = slotEl.getBoundingClientRect();
+  const tw = tb.offsetWidth || 290;
+  const th = tb.offsetHeight || 46;
+  let top = rect.top - th - 10;
+  let left = rect.left + (rect.width - tw) / 2;
+  if (top < 8) top = rect.bottom + 10;
+  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  tb.style.top = top + 'px';
+  tb.style.left = left + 'px';
+}
+
+function updateImgToolbar() {
+  if (!IMG_EDIT.slot) return;
+  const cs  = IMG_EDIT.coverScale || 1;
+  const t   = getImgT(IMG_EDIT.slot);
+  const pct = Math.round(cs * t.scale * 100);
+  document.getElementById('img-zoom-val').textContent = pct + '%';
+  document.getElementById('img-zoom-slider').value = Math.min(800, Math.max(5, pct));
+  // Rotation
+  const rot = t.rotation || 0;
+  document.getElementById('img-rot-val').textContent = rot + '°';
+  document.getElementById('img-rot-slider').value = rot;
+  // Flip
+  document.getElementById('img-flip-btn').classList.toggle('active', !!t.flipH);
+}
+
+/* ── Zoom helpers — all operate in VISUAL scale space ──
+   visualScale = coverScale * t.scale
+   t.scale = visualScale / coverScale
+   t.scale = 1 → same framing as default object-fit:cover
+*/
+function _getVisual() {
+  const cs = IMG_EDIT.coverScale || 1;
+  return cs * getImgT(IMG_EDIT.slot).scale;
+}
+
+function _applyVisual(newVisual, pivotX, pivotY) {
+  const cs = IMG_EDIT.coverScale || 1;
+  const t  = { ...getImgT(IMG_EDIT.slot) };
+  const oldVisual = cs * t.scale;
+  const ratio = newVisual / oldVisual;
+  t.x = (pivotX !== undefined) ? pivotX + (t.x - pivotX) * ratio : t.x * ratio;
+  t.y = (pivotY !== undefined) ? pivotY + (t.y - pivotY) * ratio : t.y * ratio;
+  t.scale = newVisual / cs;
+  setImgT(IMG_EDIT.slot, t);
+  applyImgTransform(IMG_EDIT.slot);
+  updateImgToolbar();
+}
+
+function imgZoomStep(delta) {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  const oldV = _getVisual();
+  _applyVisual(Math.max(0.05, Math.min(8, oldV + delta)));
+}
+
+function imgZoomTo(targetVisual) {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  _applyVisual(Math.max(0.05, Math.min(8, targetVisual)));
+}
+
+function imgZoomSlider(val) {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  _applyVisual(parseInt(val) / 100);
+}
+
+/* Show the entire photo inside (or extending beyond) the frame */
+function imgFitAll() {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  const containScale = Math.min(
+    IMG_EDIT.containerW / IMG_EDIT.naturalW,
+    IMG_EDIT.containerH / IMG_EDIT.naturalH
+  );
+  const cs = IMG_EDIT.coverScale || 1;
+  setImgT(IMG_EDIT.slot, { ...getImgT(IMG_EDIT.slot), scale: containScale / cs, x: 0, y: 0 });
+  applyImgTransform(IMG_EDIT.slot);
+  updateImgToolbar();
+}
+
+function imgResetPan() {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  setImgT(IMG_EDIT.slot, { ...getImgT(IMG_EDIT.slot), x: 0, y: 0 });
+  applyImgTransform(IMG_EDIT.slot);
+}
+
+/* Reset to default cover framing (t.scale=1, centered) */
+function imgReset() {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  setImgT(IMG_EDIT.slot, { ...getImgT(IMG_EDIT.slot), scale: 1, x: 0, y: 0, rotation: 0, flipH: false });
+  applyImgTransform(IMG_EDIT.slot);
+  updateImgToolbar();
+}
+
+/* ── Rotation ── */
+function imgRotateSlider(val) {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  const t = { ...getImgT(IMG_EDIT.slot) };
+  t.rotation = parseInt(val);
+  setImgT(IMG_EDIT.slot, t);
+  applyImgTransform(IMG_EDIT.slot);
+  updateImgToolbar();
+}
+
+function imgRotateStep(deg) {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  const t = { ...getImgT(IMG_EDIT.slot) };
+  t.rotation = Math.max(-180, Math.min(180, (t.rotation || 0) + deg));
+  setImgT(IMG_EDIT.slot, t);
+  applyImgTransform(IMG_EDIT.slot);
+  updateImgToolbar();
+}
+
+function imgResetRotation() {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  const t = { ...getImgT(IMG_EDIT.slot) };
+  t.rotation = 0;
+  setImgT(IMG_EDIT.slot, t);
+  applyImgTransform(IMG_EDIT.slot);
+  updateImgToolbar();
+}
+
+/* ── Flip horizontal ── */
+function imgFlipH() {
+  if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+  const t = { ...getImgT(IMG_EDIT.slot) };
+  t.flipH = !t.flipH;
+  setImgT(IMG_EDIT.slot, t);
+  applyImgTransform(IMG_EDIT.slot);
+  updateImgToolbar();
+}
+
+/* ── Setup all image editing events ── */
+function setupImageEditing() {
+  const wrap = document.getElementById('canvas-wrap');
+
+  /* ─ PAN: mousedown on canvas-wrap (start) ─ */
+  wrap.addEventListener('mousedown', e => {
+    if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+    if (e.target.closest('.img-edit-btn')) return;
+    const slotEl = e.target.closest(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+    if (!slotEl) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const t = getImgT(IMG_EDIT.slot);
+    IMG_EDIT.panning = true;
+    IMG_EDIT.startX = e.clientX;
+    IMG_EDIT.startY = e.clientY;
+    IMG_EDIT.startTX = t.x;
+    IMG_EDIT.startTY = t.y;
+    slotEl.classList.add('img-editing-grabbing');
+  });
+
+  /* ─ PAN: mousemove ─ */
+  document.addEventListener('mousemove', e => {
+    if (!IMG_EDIT.panning) return;
+    const dx = e.clientX - IMG_EDIT.startX;
+    const dy = e.clientY - IMG_EDIT.startY;
+    const t = { ...getImgT(IMG_EDIT.slot) };
+    t.x = IMG_EDIT.startTX + dx;
+    t.y = IMG_EDIT.startTY + dy;
+    setImgT(IMG_EDIT.slot, t);
+    applyImgTransform(IMG_EDIT.slot);
+    updateImgToolbar();
+  });
+
+  /* ─ PAN: mouseup ─ */
+  document.addEventListener('mouseup', () => {
+    if (!IMG_EDIT.panning) return;
+    IMG_EDIT.panning = false;
+    if (IMG_EDIT.slot) {
+      const slotEl = document.querySelector(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+      if (slotEl) slotEl.classList.remove('img-editing-grabbing');
+    }
+  });
+
+  /* ─ SCROLL TO ZOOM — cursor-centered, visual-scale aware ─ */
+  wrap.addEventListener('wheel', e => {
+    if (!IMG_EDIT.active || !IMG_EDIT.slot) return;
+    const slotEl = e.target.closest(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+    if (!slotEl) return;
+    e.preventDefault();
+    const cs = IMG_EDIT.coverScale || 1;
+    const oldVisual = cs * getImgT(IMG_EDIT.slot).scale;
+    const delta     = e.deltaY > 0 ? -0.1 : 0.1;
+    const newVisual = Math.max(0.05, Math.min(8, oldVisual + delta * oldVisual));
+    // Cursor pivot relative to container center
+    const rect = slotEl.getBoundingClientRect();
+    const cx = e.clientX - rect.left - rect.width  / 2;
+    const cy = e.clientY - rect.top  - rect.height / 2;
+    _applyVisual(newVisual, cx, cy);
+    repositionToolbar();
+  }, { passive: false });
+
+  /* ─ Click outside slot or toolbar → exit edit ─ */
+  document.addEventListener('mousedown', e => {
+    if (!IMG_EDIT.active) return;
+    if (e.target.closest('#img-toolbar')) return;
+    if (e.target.closest('.img-edit-btn')) return;
+    const slotEl = document.querySelector(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+    if (slotEl && slotEl.contains(e.target)) return;
+    exitEditImage();
+  }, true);
+
+  /* ─ Toolbar dragging ─ */
+  const tb = document.getElementById('img-toolbar');
+  const dragHandle = document.getElementById('it-drag');
+  let _tbStartX = 0, _tbStartY = 0, _tbOrigTop = 0, _tbOrigLeft = 0;
+
+  dragHandle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    _toolbarDragging = true;
+    _tbStartX = e.clientX;
+    _tbStartY = e.clientY;
+    _tbOrigTop = parseInt(tb.style.top) || 0;
+    _tbOrigLeft = parseInt(tb.style.left) || 0;
+  });
+  document.addEventListener('mousemove', e => {
+    if (!_toolbarDragging) return;
+    const dx = e.clientX - _tbStartX;
+    const dy = e.clientY - _tbStartY;
+    tb.style.top  = (_tbOrigTop  + dy) + 'px';
+    tb.style.left = (_tbOrigLeft + dx) + 'px';
+  });
+  document.addEventListener('mouseup', () => { _toolbarDragging = false; });
+
+  /* ─ Reposition toolbar on window resize ─ */
+  window.addEventListener('resize', () => {
+    if (IMG_EDIT.active) repositionToolbar();
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   APPLY NATURAL TRANSFORMS (outside edit mode)
+   object-fit:cover + CSS scale() doesn't preserve framing —
+   so for any slot whose dimensions are known, we keep the
+   image in natural-size mode and apply the full transform.
+══════════════════════════════════════════════════════ */
+function onSlotImgLoad(slot) {
+  const t = getImgT(slot);
+  // If dimensions already known (saved from previous session), apply immediately
+  if (t.cs && t.nW && t.nH) { applyNaturalTransforms(); return; }
+  // If no dimensions yet but transforms exist (scale/x/y changed), compute from loaded img
+  const container = document.querySelector(`.ov-photo[data-slot="${slot}"]`);
+  if (!container) return;
+  const imgEl = container.querySelector('.ov-photo-img');
+  if (!imgEl || !imgEl.naturalWidth) return;
+  const cW = container.offsetWidth;
+  const cH = container.offsetHeight;
+  if (!cW || !cH) return;
+  const nW = imgEl.naturalWidth;
+  const nH = imgEl.naturalHeight;
+  const cs = Math.max(cW / nW, cH / nH);
+  setImgT(slot, { ...t, cs, nW, nH });
+  applyNaturalTransforms();
+}
+
+function applyNaturalTransforms() {
+  vdef().slots.forEach(slot => {
+    if (IMG_EDIT.active && IMG_EDIT.slot === slot) return;
+    const p = slotPh(slot);
+    if (!p) return;
+    const t = getImgT(slot);
+    if (!t.cs || !t.nW || !t.nH) return; // Never edited → object-fit:cover is fine
+    const container = document.querySelector(`.ov-photo[data-slot="${slot}"]`);
+    if (!container) return;
+    const imgEl = container.querySelector('.ov-photo-img');
+    if (!imgEl) return;
+    const cW = container.offsetWidth;
+    const cH = container.offsetHeight;
+    if (!cW || !cH) return;
+    imgEl.style.width        = t.nW + 'px';
+    imgEl.style.height       = t.nH + 'px';
+    imgEl.style.objectFit    = 'none';
+    imgEl.style.inset        = 'auto';
+    imgEl.style.left         = ((cW - t.nW) / 2) + 'px';
+    imgEl.style.top          = ((cH - t.nH) / 2) + 'px';
+    imgEl.style.borderRadius = '0';
+    const rot = t.rotation || 0;
+    const fx  = t.flipH ? -1 : 1;
+    imgEl.style.transform = `translate(${t.x}px,${t.y}px) rotate(${rot}deg) scaleX(${fx}) scale(${t.cs * t.scale})`;
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER CANVAS
+══════════════════════════════════════════════════════ */
+function renderCanvas() {
+  const vk = vkey(), vd = vdef();
+  const slotEls = vd.slots.map(slot => {
+    const p = slotPh(slot);
+    const t = p ? getImgT(slot) : null;
+    const isEditing = IMG_EDIT.active && IMG_EDIT.slot === slot;
+    const isSel = S.selectedSlot === slot;
+
+    // Build classes
+    let cls = `ov-photo ov-${slot} ${vk}-${slot}`;
+    if (isSel) cls += ' slot-sel';
+    if (isEditing) cls += ' img-editing';
+
+    // Image element
+    const imgEl = p
+      ? `<img class="ov-photo-img" src="${p.url}" draggable="false"
+            onload="onSlotImgLoad('${slot}')"
+            style="transform:translate(${t.x}px,${t.y}px) rotate(${t.rotation||0}deg) scaleX(${t.flipH?-1:1}) scale(${t.scale});">`
+      : '';
+
+    // Edit button (only if has photo and NOT in edit mode for this slot)
+    const editBtn = p && !isEditing
+      ? `<button class="img-edit-btn" onclick="enterEditImage(event,'${slot}')" title="Éditer le cadrage de l'image">⌖</button>`
+      : '';
+
+    // Editing badge
+    const editingBadge = isEditing
+      ? `<div class="img-editing-badge">Édition</div>`
+      : '';
+
+    return `<div class="${cls}" style="background-color:${SLOT_BG[slot]};"
+                 onclick="handleSlotClick(event,'${slot}')"
+                 data-slot="${slot}" title="${slot}">
+              ${imgEl}
+              ${editBtn}
+              ${editingBadge}
+              <span class="ov-label">${slot}</span>
+            </div>`;
+  }).join('');
+
+  document.getElementById('canvas-wrap').innerHTML = `<div>
+    <div class="overlap-canvas" style="height:${vd.h}px;">${slotEls}</div>
+    <div class="canvas-label">${vd.label}</div>
+  </div>`;
+
+  document.getElementById('v-info').textContent = vd.slots.length + ' slots';
+  document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('on', b.dataset.v === vk));
+
+  // After layout: apply correct transforms for all edited slots
+  requestAnimationFrame(() => {
+    applyNaturalTransforms();
+    // If edit mode is active, re-apply natural-size mode for the editing slot
+    if (IMG_EDIT.active && IMG_EDIT.slot && IMG_EDIT.naturalW) {
+      const container = document.querySelector(`.ov-photo[data-slot="${IMG_EDIT.slot}"]`);
+      if (container) {
+        const imgEl = container.querySelector('.ov-photo-img');
+        if (imgEl) {
+          switchImgToEditMode(container, imgEl,
+            IMG_EDIT.containerW, IMG_EDIT.containerH,
+            IMG_EDIT.naturalW,   IMG_EDIT.naturalH,
+            IMG_EDIT.slot);
+        }
+      }
+      repositionToolbar();
+    }
+  });
+}
+
+/* ── Click handler: single = assign, double-click = edit image ─ */
+let _clickTimer = null;
+function handleSlotClick(evt, slot) {
+  if (evt.target.closest('.img-edit-btn')) return; // Edit btn handles its own click
+  // If in edit mode for this slot, ignore (pan is handled by mousedown)
+  if (IMG_EDIT.active && IMG_EDIT.slot === slot) return;
+  // If in edit mode for another slot, exit it first
+  if (IMG_EDIT.active && IMG_EDIT.slot !== slot) exitEditImageSilent();
+
+  // Double-click detection
+  if (_clickTimer) {
+    clearTimeout(_clickTimer);
+    _clickTimer = null;
+    // Double click → enter image edit mode if has photo
+    const p = slotPh(slot);
+    if (p) { enterEditImage(evt, slot); return; }
+  }
+  _clickTimer = setTimeout(() => {
+    _clickTimer = null;
+    selectSlot(slot);
+  }, 220);
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER SECTIONS
+══════════════════════════════════════════════════════ */
+function renderSections() {
+  document.getElementById('section-list').innerHTML = S.sections.map(s => {
+    const filled = Object.keys(s.slots).length;
+    const total  = VARIANTS[s.variant].slots.length;
+    return `<div class="sec-row ${s.id===S.activeSection?'on':''}" onclick="selectSection('${s.id}')">
+      <div class="sec-dot"></div>
+      <span>${s.name}</span>
+      <span class="sec-badge">${s.variant.toUpperCase()} · ${filled}/${total} · ${s.photos.length}img</span>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER SLOTS
+══════════════════════════════════════════════════════ */
+function renderSlots() {
+  const vd = vdef();
+  let filled = 0;
+  document.getElementById('slots-wrap').innerHTML = ['main','second','detail','open','extra'].map(slot => {
+    const avail = vd.slots.includes(slot);
+    const p = slotPh(slot);
+    if (p && avail) filled++;
+    const isSel = S.selectedSlot === slot && avail;
+    const isEditing = IMG_EDIT.active && IMG_EDIT.slot === slot;
+    const thumbHtml = p
+      ? `<img src="${p.url}" alt="">`
+      : `<div class="slot-prev-color" style="background:${SLOT_BG[slot]};"></div>`;
+    const clearHtml = p ? `<button class="slot-clear" onclick="clearSlot(event,'${slot}')">×</button>` : '';
+    const editImgBtn = p && avail ? `<button class="slot-edit-img-btn" onclick="enterEditImageFromPanel(event,'${slot}')" title="Éditer l'image">⌖</button>` : '';
+    let rowClass = `slot-row ${isSel?'on':''} ${avail?'':'dim'} ${isEditing?'editing':''}`;
+    return `<div class="${rowClass}" data-slot="${slot}" onclick="selectSlot('${slot}')">
+      <div class="slot-prev">${thumbHtml}</div>
+      <div class="slot-body">
+        <div class="slot-name"><span class="cat-dot" style="background:${SLOT_BG[slot]};"></span>${slot}<span class="sb sb-${slot}">${slot}</span></div>
+        <div class="slot-file" style="${!p?'color:var(--text-muted);':''}">
+          ${p ? p.name : (sec().pendingSlots[slot] ? `<span style="color:#F59E0B;">⏳ ${sec().pendingSlots[slot]}</span>` : (avail?'Aucune photo':'—'))}
+        </div>
+      </div>${editImgBtn}${clearHtml}
+    </div>`;
+  }).join('');
+  document.getElementById('slots-filled').textContent = `${filled}/${vd.slots.length} assignés`;
+}
+
+function enterEditImageFromPanel(evt, slot) {
+  evt.stopPropagation();
+  // Scroll canvas into view and enter edit
+  const p = slotPh(slot);
+  if (!p) { flashHint('Ce slot n\'a pas encore de photo.'); return; }
+  if (IMG_EDIT.active && IMG_EDIT.slot !== slot) exitEditImageSilent();
+  IMG_EDIT.active = true;
+  IMG_EDIT.slot = slot;
+  S.selectedSlot = null;
+  renderCanvas();
+  renderSlots();
+  updateHint();
+  requestAnimationFrame(() => { updateImgToolbar(); showImgToolbar(); });
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER BANK
+══════════════════════════════════════════════════════ */
+function renderBank() {
+  const s = sec();
+  const grid = document.getElementById('bank-grid');
+  const empty = document.getElementById('bank-empty');
+  document.getElementById('bank-ctx-label').textContent = s.name;
+  const pendingCount = Object.keys(s.pendingSlots).length;
+  document.getElementById('photo-count').textContent = s.photos.length + (s.photos.length > 1 ? ' photos' : ' photo') + (pendingCount ? ` · ${pendingCount} en attente` : '');
+  let photos = s.photos;
+  if (S.bankFilter === 'unassigned') {
+    const used = new Set(Object.values(s.slots));
+    photos = photos.filter(p => !used.has(p.id));
+  }
+  grid.querySelectorAll('.thumb').forEach(el => el.remove());
+  if (photos.length === 0) {
+    empty.style.display = 'block';
+    empty.innerHTML = s.photos.length > 0
+      ? 'Toutes les photos sont assignées ✓'
+      : 'Ajoutez des photos pour cette section.<br><span style="color:var(--text-muted);font-size:10px;">JPG, PNG, WebP…</span>';
+    return;
+  }
+  empty.style.display = 'none';
+  photos.forEach(p => {
+    const as = assignedSlot(p.id);
+    const div = document.createElement('div');
+    div.className = 'thumb' + (as ? ' is-assigned' : '');
+    div.title = p.name;
+    div.draggable = true;
+    const slotBadge = as ? `<span class="thumb-slot-badge sb sb-${as}">${as}</span>` : '';
+    div.innerHTML = `<img src="${p.url}" alt="${p.name}" draggable="false">
+      <div class="thumb-badge">${shortName(p.name)}</div>
+      ${slotBadge}
+      <button class="thumb-del" onclick="removePhoto(event,${p.id})">×</button>`;
+    div.addEventListener('click', () => assignPhoto(p.id));
+    div.addEventListener('mouseenter', () => showThumbPreview(div, p.url));
+    div.addEventListener('mouseleave', hideThumbPreview);
+    div.addEventListener('dragstart', e => {
+      dragPid = p.id;
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', String(p.id));
+    });
+    div.addEventListener('dragend', () => { dragPid = null; });
+    grid.appendChild(div);
+  });
+  if (S.bankFilter !== 'unassigned') {
+    Object.entries(s.pendingSlots).forEach(([slot, fname]) => {
+      const div = document.createElement('div');
+      div.className = 'thumb';
+      div.title = `En attente : ${fname}`;
+      div.style.cssText = 'opacity:.5;cursor:default;border-color:rgba(245,158,11,.3);';
+      div.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;">
+        <span style="font-size:16px;">⏳</span>
+        <span style="font-size:7px;font-family:var(--font-mono);color:var(--text-dim);text-align:center;word-break:break-all;line-height:1.3;">${fname}</span>
+      </div>
+      <span class="thumb-slot-badge sb sb-${slot}">${slot}</span>`;
+      grid.appendChild(div);
+    });
+  }
+}
+
+function renderAll() { renderSections(); renderCanvas(); renderSlots(); renderBank(); }
+
+/* ══════════════════════════════════════════════════════
+   ACTIONS
+══════════════════════════════════════════════════════ */
+function selectSection(id) {
+  exitEditImageSilent();
+  S.activeSection = id;
+  S.selectedSlot = null;
+  S.bankFilter = 'all';
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('on', c.dataset.f === 'all'));
+  document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('on', b.dataset.v === sec().variant));
+  updateHint(); renderAll();
+}
+
+function setVariant(v) {
+  exitEditImageSilent();
+  sec().variant = v;
+  if (S.selectedSlot && !VARIANTS[v].slots.includes(S.selectedSlot)) S.selectedSlot = null;
+  saveState(); updateHint(); renderCanvas(); renderSlots(); renderSections();
+}
+
+function selectSlot(slot) {
+  if (IMG_EDIT.active) return; // Don't interfere with image editing
+  if (!vdef().slots.includes(slot)) return;
+  S.selectedSlot = S.selectedSlot === slot ? null : slot;
+  updateHint(); renderCanvas(); renderSlots();
+}
+
+function assignPhoto(pid) {
+  if (!S.selectedSlot) {
+    // If in edit mode, ignore — otherwise flash hint
+    if (!IMG_EDIT.active) flashHint('Sélectionnez d\'abord un slot (cliquez sur le canvas ou la liste).');
+    return;
+  }
+  sec().slots[S.selectedSlot] = pid;
+  delete sec().pendingSlots[S.selectedSlot];
+  // Reset image transform for fresh assignment
+  setImgT(S.selectedSlot, { scale:1, x:0, y:0 });
+  const vd = vdef(), cur = vd.slots.indexOf(S.selectedSlot);
+  S.selectedSlot = vd.slots.find((s,i) => i>cur && !sec().slots[s]) || null;
+  saveState(); updateHint(); renderAll();
+}
+
+function clearSlot(evt, slot) {
+  evt.stopPropagation();
+  if (IMG_EDIT.active && IMG_EDIT.slot === slot) exitEditImageSilent();
+  delete sec().slots[slot];
+  delete sec().imgTransforms[slot];
+  if (S.selectedSlot === slot) S.selectedSlot = null;
+  saveState(); updateHint(); renderCanvas(); renderSlots(); renderBank(); renderSections();
+}
+
+function clearSection() {
+  if (!confirm(`Vider tous les slots de "${sec().name}" ?`)) return;
+  exitEditImageSilent();
+  sec().slots = {}; sec().pendingSlots = {}; sec().imgTransforms = {}; S.selectedSlot = null;
+  saveState(); updateHint(); renderAll();
+}
+
+function setFilter(f) {
+  S.bankFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('on', c.dataset.f === f));
+  renderBank();
+}
+
+function removePhoto(evt, pid) {
+  evt.stopPropagation();
+  const s = sec();
+  Object.keys(s.slots).forEach(slot => {
+    if (s.slots[slot]===pid) {
+      delete s.slots[slot];
+      delete s.imgTransforms[slot];
+      if (IMG_EDIT.active && IMG_EDIT.slot === slot) exitEditImageSilent();
+    }
+  });
+  const ph = s.photos.find(p => p.id===pid);
+  if (ph) URL.revokeObjectURL(ph.url);
+  s.photos = s.photos.filter(p => p.id!==pid);
+  saveState(); renderAll();
+}
+
+/* ══════════════════════════════════════════════════════
+   UPLOAD
+══════════════════════════════════════════════════════ */
+function loadFiles(files) {
+  let added = 0;
+  Array.from(files).forEach(f => {
+    if (!f.type.startsWith('image/')) return;
+    const newPhoto = { id:S._pid++, name:f.name, url:URL.createObjectURL(f) };
+    sec().photos.push(newPhoto);
+    const pending = sec().pendingSlots;
+    Object.entries(pending).forEach(([slot, fname]) => {
+      if (fname === f.name) { sec().slots[slot] = newPhoto.id; delete pending[slot]; }
+    });
+    added++;
+  });
+  if (added) { saveState(); renderAll(); }
+}
+
+document.getElementById('file-input').addEventListener('change', e => { loadFiles(e.target.files); e.target.value=''; });
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); loadFiles(e.dataTransfer.files); });
+document.getElementById('canvas-wrap').addEventListener('dragover', e => e.preventDefault());
+document.getElementById('canvas-wrap').addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer.files.length) loadFiles(e.dataTransfer.files);
+});
+
+/* ══════════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════════ */
+function openModal() { document.getElementById('modal').classList.add('show'); document.getElementById('modal-input').value=''; setTimeout(()=>document.getElementById('modal-input').focus(),50); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function confirmSection() {
+  const name = document.getElementById('modal-input').value.trim(); if (!name) return;
+  const id = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '-' + Date.now();
+  S.sections.push({ id, name, variant:'v01', slots:{}, photos:[], pendingSlots:[], imgTransforms:{} });
+  S.activeSection = id; S.selectedSlot = null;
+  saveState(); closeModal(); renderAll();
+}
+document.getElementById('modal-input').addEventListener('keydown', e => { if(e.key==='Enter') confirmSection(); if(e.key==='Escape') closeModal(); });
+document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) closeModal(); });
+
+/* ══════════════════════════════════════════════════════
+   EXPORT
+══════════════════════════════════════════════════════ */
+function buildConfig() {
+  return {
+    tool:'Overlap Stack Lab v4 — Jardin de Marguerite DS v1.1',
+    exported:new Date().toISOString(),
+    sections:S.sections.map(s=>({
+      id:s.id, name:s.name, variant:s.variant,
+      variantLabel:VARIANTS[s.variant].label,
+      slots:Object.fromEntries(
+        Object.entries(s.slots)
+          .map(([slot,pid])=>{ const p=s.photos.find(ph=>ph.id===pid); return [slot,p?p.name:null]; })
+          .filter(([,v])=>v!==null)
+      ),
+      imgTransforms: s.imgTransforms || {},
+    })),
+  };
+}
+function doExport() {
+  const blob=new Blob([JSON.stringify(buildConfig(),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='overlap-stack-config.json'; a.click(); URL.revokeObjectURL(url);
+}
+function doCopy() {
+  navigator.clipboard.writeText(JSON.stringify(buildConfig(),null,2)).then(()=>{
+    const btn=document.querySelector('.btn-copy'),orig=btn.textContent;
+    btn.textContent='✅ Copié !'; btn.style.color='var(--green-light)';
+    setTimeout(()=>{btn.textContent=orig;btn.style.color='';},1800);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   HINT
+══════════════════════════════════════════════════════ */
+function updateHint() {
+  const hb=document.getElementById('hint-box'), ch=document.getElementById('canvas-hint');
+  if (IMG_EDIT.active && IMG_EDIT.slot) {
+    hb.className='hint-box edit-img';
+    hb.innerHTML=`<strong style="color:var(--amber)">⌖ ${IMG_EDIT.slot}</strong> en édition — <strong>Molette</strong> pour zoomer · <strong>Glisser</strong> pour recadrer · <strong>Échap</strong> pour quitter`;
+    ch.textContent=`Édition image "${IMG_EDIT.slot}" — Scroll=zoom · Drag=pan`;
+    ch.style.borderColor='rgba(245,158,11,.35)';
+    ch.style.color='var(--amber)';
+  } else if (S.selectedSlot) {
+    hb.className='hint-box ah';
+    hb.innerHTML=`Slot <strong style="color:var(--green-light)">${S.selectedSlot}</strong> sélectionné — cliquez sur une photo pour l'assigner.`;
+    ch.textContent=`Slot "${S.selectedSlot}" actif`;
+    ch.style.borderColor='';
+    ch.style.color='';
+  } else {
+    hb.className='hint-box';
+    hb.innerHTML='Cliquez sur un slot pour l\'activer · <strong>Double-clic</strong> sur une photo pour éditer son cadrage · <span style="color:var(--amber)">⌖</span> pour éditer l\'image directement';
+    ch.textContent='Cliquez ou glissez une photo sur un slot · Double-clic = édition image';
+    ch.style.borderColor='';
+    ch.style.color='';
+  }
+}
+
+function flashHint(msg) {
+  const hb=document.getElementById('hint-box');
+  hb.style.borderColor='rgba(248,113,113,.5)'; hb.style.color='#F87171'; hb.textContent=msg;
+  setTimeout(()=>{updateHint();hb.style.borderColor='';hb.style.color='';},2500);
+}
+
+function shortName(n) { const b=n.split('.').slice(0,-1).join('.'); return b.length>10?'…'+b.slice(-8):b; }
+
+/* ══════════════════════════════════════════════════════
+   THUMB HOVER PREVIEW
+══════════════════════════════════════════════════════ */
+const _prev = { el: null, img: null, hideTimer: null };
+
+function _initPreview() {
+  _prev.el  = document.getElementById('thumb-preview');
+  _prev.img = _prev.el.querySelector('img');
+}
+
+function showThumbPreview(thumbEl, url) {
+  clearTimeout(_prev.hideTimer);
+  const el  = _prev.el;
+  const img = _prev.img;
+
+  // Trigger re-animation by toggling display
+  el.style.display = 'none';
+  void el.offsetWidth; // reflow
+  img.src = url;
+  el.style.display = 'block';
+
+  const rect = thumbEl.getBoundingClientRect();
+  // Horizontal: right side of the thumb + small gap
+  let left = rect.right + 10;
+  // Clamp so preview doesn't overflow right edge (preview max is 480px)
+  if (left + 480 > window.innerWidth - 8) left = rect.left - 490;
+  el.style.left = Math.max(8, left) + 'px';
+  el.style.top  = '-9999px'; // temp off-screen until we know height
+
+  requestAnimationFrame(() => {
+    const ph = el.offsetHeight;
+    let top = rect.top + rect.height / 2 - ph / 2;
+    top = Math.max(8, Math.min(top, window.innerHeight - ph - 8));
+    el.style.top = top + 'px';
+  });
+}
+
+function hideThumbPreview() {
+  _prev.hideTimer = setTimeout(() => {
+    if (_prev.el) _prev.el.style.display = 'none';
+  }, 80); // small delay avoids flicker when moving between thumbs
+}
+
+/* ══════════════════════════════════════════════════════
+   DRAG & DROP — banque → slots
+══════════════════════════════════════════════════════ */
+let dragPid = null;
+let _dragCanvasTarget = null;
+let _dragSlotTarget   = null;
+
+function directAssign(slotName, pid) {
+  if (!vdef().slots.includes(slotName)) return;
+  sec().slots[slotName] = pid;
+  delete sec().pendingSlots[slotName];
+  setImgT(slotName, { scale:1, x:0, y:0 });
+  saveState(); updateHint(); renderAll();
+}
+
+(function() {
+  const wrap = document.getElementById('canvas-wrap');
+  wrap.addEventListener('dragover', e => {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+    const target = e.target.closest('.ov-photo');
+    if (target !== _dragCanvasTarget) {
+      if (_dragCanvasTarget) _dragCanvasTarget.classList.remove('drag-target');
+      _dragCanvasTarget = target;
+      if (target) target.classList.add('drag-target');
+    }
+  });
+  wrap.addEventListener('dragleave', e => {
+    if (!wrap.contains(e.relatedTarget)) {
+      if (_dragCanvasTarget) { _dragCanvasTarget.classList.remove('drag-target'); _dragCanvasTarget = null; }
+    }
+  });
+  wrap.addEventListener('drop', e => {
+    e.preventDefault();
+    if (_dragCanvasTarget) { _dragCanvasTarget.classList.remove('drag-target'); _dragCanvasTarget = null; }
+    if (dragPid === null) return;
+    const slotEl = e.target.closest('.ov-photo');
+    if (!slotEl) return;
+    const slotName = slotEl.dataset.slot;
+    if (slotName) directAssign(slotName, dragPid);
+  });
+})();
+
+(function() {
+  const wrap = document.getElementById('slots-wrap');
+  wrap.addEventListener('dragover', e => {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+    const target = e.target.closest('.slot-row:not(.dim)');
+    if (target !== _dragSlotTarget) {
+      if (_dragSlotTarget) _dragSlotTarget.classList.remove('drag-target');
+      _dragSlotTarget = target;
+      if (target) target.classList.add('drag-target');
+    }
+  });
+  wrap.addEventListener('dragleave', e => {
+    if (!wrap.contains(e.relatedTarget)) {
+      if (_dragSlotTarget) { _dragSlotTarget.classList.remove('drag-target'); _dragSlotTarget = null; }
+    }
+  });
+  wrap.addEventListener('drop', e => {
+    e.preventDefault();
+    if (_dragSlotTarget) { _dragSlotTarget.classList.remove('drag-target'); _dragSlotTarget = null; }
+    if (dragPid === null) return;
+    const row = e.target.closest('.slot-row:not(.dim)');
+    if (!row) return;
+    const slotName = row.dataset.slot;
+    if (slotName) directAssign(slotName, dragPid);
+  });
+})();
+
+/* ══════════════════════════════════════════════════════
+   KEYBOARD
+══════════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape') {
+    if (IMG_EDIT.active) { exitEditImage(); return; }
+    S.selectedSlot = null; updateHint(); renderCanvas(); renderSlots();
+    return;
+  }
+  // While in image edit mode, +/- for zoom, R for reset
+  if (IMG_EDIT.active) {
+    if (e.key === '=' || e.key === '+') { imgZoomStep(0.15); return; }
+    if (e.key === '-') { imgZoomStep(-0.15); return; }
+    if (e.key === 'r' || e.key === 'R') { imgReset(); return; }
+    if (e.key === '0') { imgZoomTo(1); return; }
+    return; // Don't pass through other shortcuts in edit mode
+  }
+  // Variant shortcuts
+  const varMap = {'1':'v01','2':'v02','3':'v03','4':'v05','5':'v04'};
+  if (varMap[e.key]) setVariant(varMap[e.key]);
+  // E = enter image edit for selected slot
+  if ((e.key === 'e' || e.key === 'E') && S.selectedSlot) {
+    const p = slotPh(S.selectedSlot);
+    if (p) enterEditImageFromPanel({ stopPropagation:()=>{} }, S.selectedSlot);
+  }
+});
+
+/* ══════════════════════════════════════════════════════
+   LOCALSTORAGE — SAVE / LOAD
+══════════════════════════════════════════════════════ */
+const LS_KEY = 'overlap-stack-lab-v1';
+
+function saveState() {
+  const data = {
+    activeSection: S.activeSection,
+    sections: S.sections.map(s => ({
+      id: s.id, name: s.name, variant: s.variant,
+      slotNames: Object.fromEntries(
+        Object.entries(s.slots).map(([slot,pid]) => {
+          const p = s.photos.find(ph => ph.id === pid);
+          return [slot, p ? p.name : null];
+        }).filter(([,v]) => v !== null)
+      ),
+      pendingSlots: s.pendingSlots,
+      imgTransforms: s.imgTransforms || {},
+    })),
+  };
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
+  showSaved();
+}
+
+function loadState() {
+  let data;
+  try { data = JSON.parse(localStorage.getItem(LS_KEY)); } catch(e) {}
+  if (!data) return;
+  const restored = data.sections || [];
+  S.sections = restored.map(saved => ({
+    id: saved.id, name: saved.name,
+    variant: VARIANTS[saved.variant] ? saved.variant : 'v01',
+    slots: {}, photos: [], imgTransforms: saved.imgTransforms || {},
+    pendingSlots: { ...saved.slotNames, ...saved.pendingSlots },
+  }));
+  const defs = {
+    'jardin-anglais':'v01', 'bassin-riviere':'v02', 'bosquet':'v03',
+    'potager':'v01', 'jardin-mediterraneen':'v02', 'sejour':'v03',
+    'chambre':'v01', 'cuisine':'v02', 'salle-de-bains':'v01', 'terrasse':'v03',
+  };
+  Object.keys(defs).forEach(id => {
+    if (!S.sections.find(s => s.id === id))
+      S.sections.unshift({ id, name: id.replace(/-/g,' '), variant:defs[id], slots:{}, photos:[], pendingSlots:{}, imgTransforms:{} });
+  });
+  if (data.activeSection && S.sections.find(s => s.id === data.activeSection))
+    S.activeSection = data.activeSection;
+}
+
+function showSaved() {
+  const el = document.getElementById('save-indicator');
+  const t = new Date();
+  el.innerHTML = `<span style="color:#52B788;font-size:14px;">●</span> Sauvegardé ${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.innerHTML = `<span style="color:var(--text-muted);font-size:14px;">●</span> <span style="color:var(--text-muted);">Auto-save actif</span>`; }, 3000);
+}
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+loadState();
+renderAll();
+setupImageEditing();
+_initPreview();
+document.getElementById('save-indicator').innerHTML = `<span style="color:var(--text-muted);font-size:14px;">●</span> <span style="color:var(--text-muted);">Auto-save actif</span>`;
+</script>
+</body>
+</html>
