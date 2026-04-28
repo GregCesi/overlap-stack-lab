@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;}
+html,body{height:100%;overflow:hidden;-webkit-user-select:none;user-select:none;}
 button{font-family:inherit;cursor:pointer;}
 input[type=text],input[type=range]{font-family:inherit;}
 
@@ -122,7 +122,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);display:f
 .vbtn.on{background:var(--green);border-color:var(--green);color:#fff;}
 .v-sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
 .v-info{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);}
-.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px;position:relative;}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px;position:relative;touch-action:pan-x pan-y;}
 .canvas-hint{
   position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
   background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.08);border-radius:20px;
@@ -459,6 +459,12 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);display:f
 .tab-btn.on { color:var(--green-light); border-top-color:var(--green-light); }
 .tab-btn svg { opacity:.55; }
 .tab-btn.on svg { opacity:1; }
+
+/* iPad landscape (ex: Air 1024px) — canvas-panel trop étroit pour 660px */
+@media (max-width: 1100px) and (min-width: 900px) {
+  .canvas-wrap { padding:16px; }
+  .overlap-canvas { width:min(660px, calc(100vw - 252px - 272px - 32px)); }
+}
 
 @media (max-width: 899px) {
   .app-body { grid-template-columns:1fr; }
@@ -1742,6 +1748,12 @@ function hideThumbPreview() {
   }, 80); // small delay avoids flicker when moving between thumbs
 }
 
+// Sur touch, fermer le preview si on tape ailleurs (pas de pointerleave sur touch)
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  if (_prev.el && _prev.el.style.display !== 'none') hideThumbPreview();
+});
+
 /* ══════════════════════════════════════════════════════
    DRAG & DROP — banque → slots
 ══════════════════════════════════════════════════════ */
@@ -1926,6 +1938,13 @@ function showSaved() {
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.innerHTML = `<span style="color:var(--text-muted);font-size:14px;">●</span> <span style="color:var(--text-muted);">Auto-save actif</span>`; }, 3000);
 }
+
+/* ══════════════════════════════════════════════════════
+   IPAD — empêche le zoom page Safari (double-tap / pinch sur page)
+══════════════════════════════════════════════════════ */
+document.addEventListener('gesturestart',  e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('gestureend',    e => e.preventDefault());
 
 /* ══════════════════════════════════════════════════════
    RESPONSIVE TAB BAR (portrait ≤899px)
