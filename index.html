@@ -161,36 +161,126 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);display:f
   text-shadow:0 1px 6px rgba(0,0,0,.95);pointer-events:none;position:relative;z-index:2;
 }
 
-/* V01 */
-.v01-main  {top:3%;left:3%;width:72%;height:75%;}
-.v01-second{bottom:3%;right:3%;width:54%;height:52%;border:4px solid var(--canvas-bg);}
-.v01-detail{bottom:5%;left:8%;width:28%;height:36%;transform:rotate(-1.5deg) translateZ(0);z-index:10;border:4px solid var(--canvas-bg);}
-
-/* V02 */
-.v02-detail{top:3%;left:3%;width:38%;height:48%;transform:rotate(-2.5deg) translateZ(0);z-index:10;}
-.v02-main  {top:13%;left:18%;width:62%;height:68%;transform:rotate(.5deg) translateZ(0);}
-.v02-second{bottom:3%;right:3%;width:48%;height:46%;transform:rotate(1.8deg) translateZ(0);border:4px solid var(--canvas-bg);}
-
-/* V03 */
-.v03-main  {top:3%;left:3%;width:65%;height:78%;transform:rotate(-.5deg) translateZ(0);}
-.v03-second{top:6%;right:3%;width:38%;height:44%;transform:rotate(2deg) translateZ(0);border:4px solid var(--canvas-bg);}
-.v03-open  {bottom:3%;right:8%;width:44%;height:40%;transform:rotate(-1.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:8;}
-.v03-detail{bottom:6%;left:12%;width:28%;height:32%;transform:rotate(2.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:12;}
-
-/* V04 */
-.v04-main  {top:3%;left:3%;width:58%;height:70%;transform:rotate(-.3deg) translateZ(0);}
-.v04-open  {top:8%;left:25%;width:42%;height:52%;transform:rotate(-1.8deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:5;}
-.v04-second{top:4%;right:3%;width:38%;height:46%;transform:rotate(1.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:6;}
-.v04-detail{bottom:3%;left:5%;width:28%;height:34%;transform:rotate(-2deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:10;}
-.v04-extra {bottom:6%;right:3%;width:36%;height:36%;transform:rotate(2.2deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:9;}
-
-/* V05 */
-.v05-main  {top:6%;left:10%;width:68%;height:70%;transform:rotate(.8deg) translateZ(0);}
-.v05-detail{top:3%;left:3%;width:32%;height:40%;transform:rotate(-3deg) translateZ(0);z-index:10;}
-.v05-second{bottom:3%;right:3%;width:50%;height:46%;transform:rotate(2.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:8;}
-.v05-open  {bottom:3%;left:5%;width:36%;height:38%;transform:rotate(-1.5deg) translateZ(0);border:4px solid var(--canvas-bg);z-index:7;}
+/* Slot positionnement: appliqué en inline style depuis VARIANTS[].geometry */
+.ov-photo.has-border{border:4px solid var(--canvas-bg);}
 
 .canvas-label{text-align:center;margin-top:14px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);}
+
+/* ══ LAYOUT EDIT MODE ══ */
+.overlap-canvas.layout-edit-mode{
+  outline:2px dashed rgba(245,158,11,.55);
+  outline-offset:6px;
+  background:#1B2419;
+}
+.overlap-canvas.layout-edit-mode::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:5% 5%;
+  pointer-events:none;border-radius:16px;
+}
+.ov-photo.layout-editable{cursor:move;transition:none;overflow:visible;}
+.ov-photo.layout-editable .ov-photo-img{pointer-events:none;opacity:.55;}
+.ov-photo.layout-editable .ov-label{display:none;}
+.ov-photo.layout-selected{outline:2px solid #F59E0B;outline-offset:0;z-index:200 !important;}
+
+.layout-handle{
+  position:absolute;width:12px;height:12px;background:#F59E0B;border:2px solid #fff;
+  border-radius:2px;z-index:300;touch-action:none;
+  box-shadow:0 1px 3px rgba(0,0,0,.5);
+}
+.layout-handle.h-nw{top:-7px;left:-7px;cursor:nwse-resize;}
+.layout-handle.h-ne{top:-7px;right:-7px;cursor:nesw-resize;}
+.layout-handle.h-sw{bottom:-7px;left:-7px;cursor:nesw-resize;}
+.layout-handle.h-se{bottom:-7px;right:-7px;cursor:nwse-resize;}
+.layout-handle.h-n {top:-7px;left:50%;margin-left:-6px;cursor:ns-resize;}
+.layout-handle.h-s {bottom:-7px;left:50%;margin-left:-6px;cursor:ns-resize;}
+.layout-handle.h-w {top:50%;left:-7px;margin-top:-6px;cursor:ew-resize;}
+.layout-handle.h-e {top:50%;right:-7px;margin-top:-6px;cursor:ew-resize;}
+.layout-handle.layout-rotate{
+  top:-30px;left:50%;margin-left:-7px;border-radius:50%;background:#10B981;cursor:grab;
+}
+.layout-handle.layout-rotate::before{
+  content:'';position:absolute;top:12px;left:50%;width:1px;height:14px;
+  background:#10B981;
+}
+
+.layout-edit-badge{
+  text-align:center;margin-top:10px;font-family:var(--font-mono);font-size:11px;
+  color:#F59E0B;letter-spacing:.05em;
+}
+
+/* Layout-toolbar (floating bar under canvas) */
+.layout-toolbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  padding:10px 14px;margin:0 16px 12px;
+  background:rgba(20,30,20,.95);border:1px solid rgba(245,158,11,.35);
+  border-radius:10px;font-family:var(--font-ui);font-size:11px;color:var(--text);
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+.layout-toolbar .lt-title{
+  font-family:var(--font-mono);font-size:11px;color:#F59E0B;
+  font-weight:600;letter-spacing:.04em;padding-right:6px;
+}
+.layout-toolbar .lt-hint{color:var(--text-muted);font-style:italic;}
+.layout-toolbar .lt-num{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);
+}
+.layout-toolbar .lt-num input{
+  width:54px;padding:3px 5px;background:rgba(0,0,0,.4);
+  border:1px solid var(--border-md);border-radius:4px;color:var(--text);
+  font-family:var(--font-mono);font-size:10.5px;
+}
+.layout-toolbar .lt-num input:focus{outline:none;border-color:#F59E0B;}
+.layout-toolbar .lt-z{
+  font-family:var(--font-mono);font-size:11px;color:var(--text-dim);min-width:18px;text-align:center;
+}
+.layout-toolbar .lt-sep{width:1px;height:18px;background:var(--border);margin:0 4px;}
+.layout-toolbar .lt-spacer{flex:1;}
+.layout-toolbar .lt-btn{
+  padding:5px 10px;background:rgba(255,255,255,.05);border:1px solid var(--border-md);
+  border-radius:5px;color:var(--text-dim);font-family:var(--font-ui);font-size:10.5px;
+  font-weight:500;cursor:pointer;transition:all 120ms;
+}
+.layout-toolbar .lt-btn:hover{border-color:#F59E0B;color:#F59E0B;}
+.layout-toolbar .lt-btn.on{background:rgba(245,158,11,.2);border-color:#F59E0B;color:#F59E0B;}
+.layout-toolbar .lt-btn.primary{background:var(--green);border-color:var(--green);color:#fff;}
+.layout-toolbar .lt-btn.primary:hover{background:#1B4332;}
+.layout-toolbar .lt-btn.ghost{background:none;}
+.layout-toolbar .lt-btn.danger{color:#F87171;border-color:rgba(214,40,40,.4);}
+.layout-toolbar .lt-btn.danger:hover{background:rgba(214,40,40,.15);}
+
+/* Variant buttons additions */
+.vbtn.vbtn-custom{border-color:rgba(16,185,129,.4);color:var(--text-dim);}
+.vbtn.vbtn-custom.on{background:#10B981;border-color:#10B981;color:#0A1410;}
+.vbtn.vbtn-new{border-style:dashed;color:var(--text-muted);}
+.vbtn.vbtn-new:hover{border-color:var(--green-light);color:var(--green-light);}
+.vbtn.primary{background:var(--green);border-color:var(--green);color:#fff;}
+.vbtn.primary:hover{background:#1B4332;}
+.vbtn.ghost{background:none;}
+.vbtn.danger{color:#F87171;border-color:rgba(214,40,40,.4);}
+.vbtn.danger:hover{background:rgba(214,40,40,.15);}
+.v-actions{margin-left:auto;display:inline-flex;align-items:center;gap:6px;}
+
+/* Slot panel additions */
+.btn-add-slot{
+  width:100%;margin-top:8px;padding:8px 10px;
+  background:none;border:1px dashed var(--border-md);border-radius:6px;
+  color:var(--text-muted);font-family:var(--font-ui);font-size:11px;cursor:pointer;
+  transition:all 120ms;
+}
+.btn-add-slot:hover{border-color:var(--green-light);color:var(--green-light);}
+.canvas-h-input{
+  display:flex;align-items:center;gap:6px;margin-top:10px;padding:6px 8px;
+  font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);
+}
+.canvas-h-input input{
+  width:64px;padding:3px 5px;background:rgba(0,0,0,.4);
+  border:1px solid var(--border-md);border-radius:4px;color:var(--text);
+  font-family:var(--font-mono);font-size:10.5px;
+}
 
 /* ══ IMAGE INSIDE SLOT ══ */
 .ov-photo-img{
@@ -519,17 +609,9 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);display:f
 
   <!-- CENTRE : CANVAS -->
   <div class="panel canvas-panel">
-    <div class="toolbar">
-      <button class="vbtn on" data-v="v01" onclick="setVariant('v01')">V01 · Base</button>
-      <button class="vbtn" data-v="v02" onclick="setVariant('v02')">V02 · Diagonal</button>
-      <div class="v-sep"></div>
-      <button class="vbtn" data-v="v03" onclick="setVariant('v03')">V03 · Quad</button>
-      <button class="vbtn" data-v="v05" onclick="setVariant('v05')">V05 · Asymétrique</button>
-      <div class="v-sep"></div>
-      <button class="vbtn" data-v="v04" onclick="setVariant('v04')">V04 · Penta</button>
-      <span class="v-info" id="v-info">3 slots</span>
-    </div>
+    <div class="toolbar" id="variant-toolbar"></div>
     <div class="canvas-wrap" id="canvas-wrap"></div>
+    <div id="layout-toolbar" class="layout-toolbar" style="display:none;"></div>
     <div class="canvas-hint" id="canvas-hint">Cliquez sur un slot, puis sur une photo dans la banque</div>
   </div>
 
@@ -662,24 +744,76 @@ const S = {
   selectedSlot: null,
   bankFilter: 'all',
   _pid: 1,
+  customVariants: {},  // { vc1: { label, slots:[], h, custom:true, geometry:{}, _slotCounter } }
 };
 
 const VARIANTS = {
-  v01:{ label:'V01 · 3 photos · Base',           slots:['main','second','detail'],               h:510 },
-  v02:{ label:'V02 · 3 photos · Diagonal Float', slots:['main','second','detail'],               h:488 },
-  v03:{ label:'V03 · 4 photos · Quad Stack',     slots:['main','second','detail','open'],        h:533 },
-  v04:{ label:'V04 · 5 photos · Penta Cascade',  slots:['main','second','detail','open','extra'],h:555 },
-  v05:{ label:'V05 · 4 photos · Asymétrique',    slots:['main','second','detail','open'],        h:510 },
+  v01:{ label:'V01 · 3 photos · Base', slots:['main','second','detail'], h:510, custom:false,
+    geometry:{
+      main:   { x:3,  y:3,  w:72, h:75, rot:0,    z:1,  border:false },
+      second: { x:43, y:45, w:54, h:52, rot:0,    z:2,  border:true  },
+      detail: { x:8,  y:59, w:28, h:36, rot:-1.5, z:10, border:true  },
+    } },
+  v02:{ label:'V02 · 3 photos · Diagonal Float', slots:['main','second','detail'], h:488, custom:false,
+    geometry:{
+      main:   { x:18, y:13, w:62, h:68, rot:0.5,  z:1,  border:false },
+      second: { x:49, y:51, w:48, h:46, rot:1.8,  z:2,  border:true  },
+      detail: { x:3,  y:3,  w:38, h:48, rot:-2.5, z:10, border:false },
+    } },
+  v03:{ label:'V03 · 4 photos · Quad Stack', slots:['main','second','detail','open'], h:533, custom:false,
+    geometry:{
+      main:   { x:3,  y:3,  w:65, h:78, rot:-0.5, z:1,  border:false },
+      second: { x:59, y:6,  w:38, h:44, rot:2,    z:2,  border:true  },
+      detail: { x:12, y:62, w:28, h:32, rot:2.5,  z:12, border:true  },
+      open:   { x:48, y:57, w:44, h:40, rot:-1.5, z:8,  border:true  },
+    } },
+  v04:{ label:'V04 · 5 photos · Penta Cascade', slots:['main','second','detail','open','extra'], h:555, custom:false,
+    geometry:{
+      main:   { x:3,  y:3,  w:58, h:70, rot:-0.3, z:1,  border:false },
+      second: { x:59, y:4,  w:38, h:46, rot:1.5,  z:6,  border:true  },
+      detail: { x:5,  y:63, w:28, h:34, rot:-2,   z:10, border:true  },
+      open:   { x:25, y:8,  w:42, h:52, rot:-1.8, z:5,  border:true  },
+      extra:  { x:61, y:58, w:36, h:36, rot:2.2,  z:9,  border:true  },
+    } },
+  v05:{ label:'V05 · 4 photos · Asymétrique', slots:['main','second','detail','open'], h:510, custom:false,
+    geometry:{
+      main:   { x:10, y:6,  w:68, h:70, rot:0.8,  z:1,  border:false },
+      second: { x:47, y:51, w:50, h:46, rot:2.5,  z:8,  border:true  },
+      detail: { x:3,  y:3,  w:32, h:40, rot:-3,   z:10, border:false },
+      open:   { x:5,  y:59, w:36, h:38, rot:-1.5, z:7,  border:true  },
+    } },
 };
 
 const SLOT_BG = {
   main:'#3D4A3B', second:'#4A4533', detail:'#3D3028', open:'#2E3D3C', extra:'#2B3840',
 };
+const FALLBACK_BG = ['#3D4A3B','#4A4533','#3D3028','#2E3D3C','#2B3840','#3A3D2E','#2D2D3D','#3D2D3A'];
+function slotBg(name){
+  if (SLOT_BG[name]) return SLOT_BG[name];
+  let h = 0; for (let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
+  return FALLBACK_BG[h % FALLBACK_BG.length];
+}
+
+/* ── Variant helpers (built-ins + customs) ── */
+function getVariant(k){ return VARIANTS[k] || S.customVariants[k] || null; }
+function allVariants(){ return { ...VARIANTS, ...S.customVariants }; }
+function isCustomVariant(k){ return !!S.customVariants[k]; }
+function nextCustomKey(){
+  let i = 1;
+  while (S.customVariants['vc'+i]) i++;
+  return 'vc'+i;
+}
+function nextSlotName(vk){
+  const v = S.customVariants[vk];
+  if (!v) return null;
+  v._slotCounter = (v._slotCounter || 0) + 1;
+  return 'slot' + v._slotCounter;
+}
 
 /* ── Getters ── */
 const sec    = ()   => S.sections.find(s => s.id === S.activeSection);
 const vkey   = ()   => sec().variant;
-const vdef   = ()   => VARIANTS[vkey()];
+const vdef   = ()   => getVariant(vkey());
 const photo  = id   => sec().photos.find(p => p.id === id);
 const slotPh = slot => { const pid = sec().slots[slot]; return pid ? photo(pid) : null; };
 const assignedSlot = pid => Object.entries(sec().slots).find(([,v])=>v===pid)?.[0]||null;
@@ -724,6 +858,20 @@ const IMG_EDIT = {
   panning: false,
   startX: 0, startY: 0,
   startTX: 0, startTY: 0,
+};
+
+/* ══════════════════════════════════════════════════════
+   LAYOUT EDITOR STATE (move/resize/rotate slots in a custom variant)
+══════════════════════════════════════════════════════ */
+const LAYOUT_EDIT = {
+  active: false,
+  vk: null,           // variant key being edited
+  slot: null,         // currently selected slot
+  op: null,           // 'drag' | 'resize-{nw|n|ne|e|se|s|sw|w}' | 'rotate'
+  startX: 0, startY: 0,
+  startGeom: null,    // snapshot of slot geometry at op start
+  snapshot: null,     // full variant snapshot for Cancel
+  canvasW: 0, canvasH: 0,
 };
 
 function enterEditImage(evt, slot) {
@@ -997,6 +1145,13 @@ function setupImageEditing() {
   const wrap = document.getElementById('canvas-wrap');
 
   /* ════════════════════════════════════════════════
+     LAYOUT EDIT — pointer move/up (drag/resize/rotate)
+  ════════════════════════════════════════════════ */
+  document.addEventListener('pointermove', handleLayoutPointerMove);
+  document.addEventListener('pointerup',   handleLayoutPointerUp);
+  document.addEventListener('pointercancel', handleLayoutPointerUp);
+
+  /* ════════════════════════════════════════════════
      MOUSE — pan (conservé pour desktop)
   ════════════════════════════════════════════════ */
   wrap.addEventListener('mousedown', e => {
@@ -1247,18 +1402,32 @@ function applyNaturalTransforms() {
 /* ══════════════════════════════════════════════════════
    RENDER CANVAS
 ══════════════════════════════════════════════════════ */
+function slotGeomStyle(g, slotName){
+  const bg = slotBg(slotName);
+  return `position:absolute;background-color:${bg};`
+    + `left:${g.x}%;top:${g.y}%;width:${g.w}%;height:${g.h}%;`
+    + `transform:rotate(${g.rot||0}deg) translateZ(0);z-index:${g.z||1};`;
+}
+
 function renderCanvas() {
   const vk = vkey(), vd = vdef();
+  const inLayoutEdit = LAYOUT_EDIT.active && LAYOUT_EDIT.vk === vk;
   const slotEls = vd.slots.map(slot => {
     const p = slotPh(slot);
     const t = p ? getImgT(slot) : null;
     const isEditing = IMG_EDIT.active && IMG_EDIT.slot === slot;
     const isSel = S.selectedSlot === slot;
+    const isLayoutSel = inLayoutEdit && LAYOUT_EDIT.slot === slot;
+    const g = vd.geometry[slot];
+    if (!g) return '';
 
     // Build classes
     let cls = `ov-photo ov-${slot} ${vk}-${slot}`;
+    if (g.border) cls += ' has-border';
     if (isSel) cls += ' slot-sel';
     if (isEditing) cls += ' img-editing';
+    if (inLayoutEdit) cls += ' layout-editable';
+    if (isLayoutSel) cls += ' layout-selected';
 
     // Image element
     const imgEl = p
@@ -1268,7 +1437,7 @@ function renderCanvas() {
       : '';
 
     // Edit button (only if has photo and NOT in edit mode for this slot)
-    const editBtn = p && !isEditing
+    const editBtn = p && !isEditing && !inLayoutEdit
       ? `<button class="img-edit-btn" onclick="enterEditImage(event,'${slot}')" title="Éditer le cadrage de l'image">⌖</button>`
       : '';
 
@@ -1277,23 +1446,35 @@ function renderCanvas() {
       ? `<div class="img-editing-badge">Édition</div>`
       : '';
 
-    return `<div class="${cls}" style="background-color:${SLOT_BG[slot]};"
+    // Layout edit handles
+    const handles = isLayoutSel ? renderLayoutHandles() : '';
+
+    return `<div class="${cls}" style="${slotGeomStyle(g, slot)}"
                  onclick="handleSlotClick(event,'${slot}')"
+                 onpointerdown="handleLayoutPointerDown(event,'${slot}')"
                  data-slot="${slot}" title="${slot}">
               ${imgEl}
               ${editBtn}
               ${editingBadge}
+              ${handles}
               <span class="ov-label">${slot}</span>
             </div>`;
   }).join('');
 
+  const layoutBadge = inLayoutEdit
+    ? `<div class="layout-edit-badge">⚙ Édition layout — ${vd.label}</div>`
+    : '';
+
   document.getElementById('canvas-wrap').innerHTML = `<div>
-    <div class="overlap-canvas" style="height:${vd.h}px;">${slotEls}</div>
-    <div class="canvas-label">${vd.label}</div>
+    <div class="overlap-canvas${inLayoutEdit?' layout-edit-mode':''}" style="height:${vd.h}px;">${slotEls}</div>
+    <div class="canvas-label">${vd.label}${vd.custom?' · custom':''}</div>
+    ${layoutBadge}
   </div>`;
 
   document.getElementById('v-info').textContent = vd.slots.length + ' slots';
   document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('on', b.dataset.v === vk));
+
+  if (inLayoutEdit) renderLayoutToolbar();
 
   // After layout: apply correct transforms for all edited slots
   requestAnimationFrame(() => {
@@ -1315,10 +1496,329 @@ function renderCanvas() {
   });
 }
 
+/* ══════════════════════════════════════════════════════
+   LAYOUT EDITOR — drag/resize/rotate slots in custom variants
+══════════════════════════════════════════════════════ */
+const HANDLE_DIRS = ['nw','n','ne','e','se','s','sw','w'];
+
+function renderLayoutHandles(){
+  const handles = HANDLE_DIRS.map(d =>
+    `<div class="layout-handle h-${d}" data-op="resize-${d}"></div>`
+  ).join('');
+  return handles + `<div class="layout-handle layout-rotate" data-op="rotate" title="Rotation"></div>`;
+}
+
+function renderLayoutToolbar(){
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const slot = LAYOUT_EDIT.slot;
+  const g = slot ? v.geometry[slot] : null;
+  const tb = document.getElementById('layout-toolbar');
+  if (!tb) return;
+  tb.style.display = 'flex';
+  if (!g) {
+    tb.innerHTML = `
+      <span class="lt-title">Layout · ${v.label}</span>
+      <span class="lt-hint">Sélectionne un slot, ou ajoute-en un</span>
+      <button class="lt-btn" onclick="addSlotToCurrent()">+ Slot</button>
+      <span class="lt-spacer"></span>
+      <button class="lt-btn primary" onclick="saveLayoutEdit()">✓ Enregistrer</button>
+      <button class="lt-btn ghost" onclick="cancelLayoutEdit()">Annuler</button>`;
+    return;
+  }
+  tb.innerHTML = `
+    <span class="lt-title">${slot}</span>
+    <label class="lt-num">x <input type="number" step="0.5" value="${g.x.toFixed(1)}" onchange="setSlotGeom('x',this.value)"></label>
+    <label class="lt-num">y <input type="number" step="0.5" value="${g.y.toFixed(1)}" onchange="setSlotGeom('y',this.value)"></label>
+    <label class="lt-num">w <input type="number" step="0.5" value="${g.w.toFixed(1)}" onchange="setSlotGeom('w',this.value)"></label>
+    <label class="lt-num">h <input type="number" step="0.5" value="${g.h.toFixed(1)}" onchange="setSlotGeom('h',this.value)"></label>
+    <label class="lt-num">rot <input type="number" step="0.5" value="${(g.rot||0).toFixed(1)}" onchange="setSlotGeom('rot',this.value)"></label>
+    <span class="lt-sep"></span>
+    <button class="lt-btn" onclick="bumpSlotZ('${slot}',-1)" title="Couche descendante">▾ z</button>
+    <span class="lt-z">${g.z}</span>
+    <button class="lt-btn" onclick="bumpSlotZ('${slot}',1)" title="Couche montante">▴ z</button>
+    <button class="lt-btn ${g.border?'on':''}" onclick="toggleSlotBorder('${slot}')" title="Bordure blanche 4px">⬚ bord</button>
+    <span class="lt-sep"></span>
+    <button class="lt-btn" onclick="addSlotToCurrent()">+ Slot</button>
+    <button class="lt-btn danger" onclick="removeSlot('${slot}')" title="Supprimer ce slot">× slot</button>
+    <span class="lt-spacer"></span>
+    <button class="lt-btn primary" onclick="saveLayoutEdit()" title="Enregistrer (Échap)">✓ Enregistrer</button>
+    <button class="lt-btn ghost" onclick="cancelLayoutEdit()" title="Annuler">Annuler</button>`;
+}
+
+function enterLayoutEdit(){
+  const vk = vkey();
+  if (!isCustomVariant(vk)) { flashHint('Édition possible uniquement sur les variantes custom.'); return; }
+  if (IMG_EDIT.active) exitEditImageSilent();
+  LAYOUT_EDIT.active = true;
+  LAYOUT_EDIT.vk = vk;
+  LAYOUT_EDIT.slot = S.customVariants[vk].slots[0] || null;
+  LAYOUT_EDIT.snapshot = JSON.parse(JSON.stringify(S.customVariants[vk]));
+  S.selectedSlot = null;
+  updateHint();
+  renderVariantButtons();
+  renderCanvas();
+  renderSlots();
+}
+
+function exitLayoutEdit({ revert=false } = {}){
+  if (!LAYOUT_EDIT.active) return;
+  if (revert && LAYOUT_EDIT.snapshot && LAYOUT_EDIT.vk) {
+    S.customVariants[LAYOUT_EDIT.vk] = LAYOUT_EDIT.snapshot;
+  }
+  LAYOUT_EDIT.active = false;
+  LAYOUT_EDIT.vk = null;
+  LAYOUT_EDIT.slot = null;
+  LAYOUT_EDIT.op = null;
+  LAYOUT_EDIT.snapshot = null;
+  const tb = document.getElementById('layout-toolbar');
+  if (tb) { tb.style.display = 'none'; tb.innerHTML = ''; }
+}
+
+function saveLayoutEdit(){ if (!LAYOUT_EDIT.active) return; exitLayoutEdit({revert:false}); saveState(); updateHint(); renderAll(); }
+function cancelLayoutEdit(){ if (!LAYOUT_EDIT.active) return; exitLayoutEdit({revert:true}); updateHint(); renderAll(); }
+
+function selectLayoutSlot(slot){
+  if (!LAYOUT_EDIT.active) return;
+  LAYOUT_EDIT.slot = slot;
+  renderCanvas();
+  renderSlots();
+}
+
+function handleLayoutPointerDown(evt, slot){
+  if (!LAYOUT_EDIT.active || LAYOUT_EDIT.vk !== vkey()) return;
+  const handleEl = evt.target.closest('.layout-handle');
+  if (!handleEl && evt.target.closest('.img-edit-btn,.layout-edit-badge')) return;
+  evt.preventDefault();
+  evt.stopPropagation();
+  if (LAYOUT_EDIT.slot !== slot && !handleEl) selectLayoutSlot(slot);
+  const v = S.customVariants[LAYOUT_EDIT.vk];
+  const g = v.geometry[LAYOUT_EDIT.slot];
+  if (!g) return;
+  const op = handleEl ? handleEl.dataset.op : 'drag';
+  const canvas = document.querySelector('.overlap-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  LAYOUT_EDIT.op = op;
+  LAYOUT_EDIT.startX = evt.clientX;
+  LAYOUT_EDIT.startY = evt.clientY;
+  LAYOUT_EDIT.startGeom = { ...g };
+  LAYOUT_EDIT.canvasW = rect.width;
+  LAYOUT_EDIT.canvasH = rect.height;
+  LAYOUT_EDIT.canvasLeft = rect.left;
+  LAYOUT_EDIT.canvasTop = rect.top;
+  try { evt.target.setPointerCapture(evt.pointerId); } catch(e){}
+}
+
+function handleLayoutPointerMove(evt){
+  if (!LAYOUT_EDIT.active || !LAYOUT_EDIT.op) return;
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const g0 = LAYOUT_EDIT.startGeom; if (!g0) return;
+  const slot = LAYOUT_EDIT.slot;
+  const W = LAYOUT_EDIT.canvasW || 1;
+  const H = LAYOUT_EDIT.canvasH || 1;
+  const dxPct = ((evt.clientX - LAYOUT_EDIT.startX) / W) * 100;
+  const dyPct = ((evt.clientY - LAYOUT_EDIT.startY) / H) * 100;
+  const snap = !!evt.shiftKey;
+  const round = n => snap ? Math.round(n) : Math.round(n*10)/10;
+  const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
+
+  const g = { ...g0 };
+  const op = LAYOUT_EDIT.op;
+  if (op === 'drag') {
+    g.x = clamp(round(g0.x + dxPct), 0, 100 - g0.w);
+    g.y = clamp(round(g0.y + dyPct), 0, 100 - g0.h);
+  } else if (op === 'rotate') {
+    const cx = LAYOUT_EDIT.canvasLeft + ((g0.x + g0.w/2)/100)*W;
+    const cy = LAYOUT_EDIT.canvasTop + ((g0.y + g0.h/2)/100)*H;
+    const a0 = Math.atan2(LAYOUT_EDIT.startY - cy, LAYOUT_EDIT.startX - cx);
+    const a1 = Math.atan2(evt.clientY - cy, evt.clientX - cx);
+    let deg = (g0.rot||0) + (a1 - a0) * 180/Math.PI;
+    if (snap) deg = Math.round(deg/15)*15;
+    else deg = Math.round(deg*10)/10;
+    g.rot = clamp(deg, -180, 180);
+  } else if (op.startsWith('resize-')) {
+    const dir = op.slice(7);
+    let nx = g0.x, ny = g0.y, nw = g0.w, nh = g0.h;
+    if (dir.includes('e')) nw = g0.w + dxPct;
+    if (dir.includes('w')) { nw = g0.w - dxPct; nx = g0.x + dxPct; }
+    if (dir.includes('s')) nh = g0.h + dyPct;
+    if (dir.includes('n')) { nh = g0.h - dyPct; ny = g0.y + dyPct; }
+    nw = clamp(round(nw), 5, 100);
+    nh = clamp(round(nh), 5, 100);
+    nx = clamp(round(nx), 0, 100 - nw);
+    ny = clamp(round(ny), 0, 100 - nh);
+    g.x = nx; g.y = ny; g.w = nw; g.h = nh;
+  }
+  v.geometry[slot] = g;
+  applySlotGeometry(slot, g);
+  renderLayoutToolbar();
+}
+
+function handleLayoutPointerUp(evt){
+  if (!LAYOUT_EDIT.active || !LAYOUT_EDIT.op) return;
+  LAYOUT_EDIT.op = null;
+  LAYOUT_EDIT.startGeom = null;
+}
+
+function applySlotGeometry(slot, g){
+  const el = document.querySelector(`.ov-photo[data-slot="${slot}"]`);
+  if (!el) return;
+  el.style.left = g.x + '%';
+  el.style.top = g.y + '%';
+  el.style.width = g.w + '%';
+  el.style.height = g.h + '%';
+  el.style.transform = `rotate(${g.rot||0}deg) translateZ(0)`;
+  el.style.zIndex = g.z;
+  el.classList.toggle('has-border', !!g.border);
+}
+
+function setSlotGeom(prop, val){
+  if (!LAYOUT_EDIT.active) return;
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const slot = LAYOUT_EDIT.slot; const g = v.geometry[slot]; if (!g) return;
+  const n = parseFloat(val); if (isNaN(n)) return;
+  const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
+  if (prop === 'x') g.x = clamp(n, 0, 100 - g.w);
+  else if (prop === 'y') g.y = clamp(n, 0, 100 - g.h);
+  else if (prop === 'w') { g.w = clamp(n, 5, 100); if (g.x + g.w > 100) g.x = 100 - g.w; }
+  else if (prop === 'h') { g.h = clamp(n, 5, 100); if (g.y + g.h > 100) g.y = 100 - g.h; }
+  else if (prop === 'rot') g.rot = clamp(n, -180, 180);
+  applySlotGeometry(slot, g);
+  renderLayoutToolbar();
+}
+
+function bumpSlotZ(slot, dir){
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const g = v.geometry[slot]; if (!g) return;
+  g.z = Math.max(1, (g.z||1) + dir);
+  applySlotGeometry(slot, g);
+  renderLayoutToolbar();
+}
+
+function toggleSlotBorder(slot){
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const g = v.geometry[slot]; if (!g) return;
+  g.border = !g.border;
+  applySlotGeometry(slot, g);
+  renderLayoutToolbar();
+}
+
+function addSlotToCurrent(){
+  if (!LAYOUT_EDIT.active) return;
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const name = nextSlotName(LAYOUT_EDIT.vk);
+  const offset = (v.slots.length * 5) % 40;
+  const maxZ = Math.max(0, ...Object.values(v.geometry).map(x => x.z||1));
+  v.slots.push(name);
+  v.geometry[name] = { x:10+offset, y:10+offset, w:50, h:50, rot:0, z:maxZ+1, border:false };
+  LAYOUT_EDIT.slot = name;
+  renderCanvas();
+  renderSlots();
+}
+
+function removeSlot(slot){
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const i = v.slots.indexOf(slot); if (i < 0) return;
+  let confirmMsg = `Supprimer le slot "${slot}" ?`;
+  const inUse = S.sections.filter(s => s.variant === LAYOUT_EDIT.vk && s.slots[slot]).length;
+  if (inUse) confirmMsg += `\n${inUse} section(s) ont une photo assignée à ce slot — elle sera retirée.`;
+  if (!confirm(confirmMsg)) return;
+  v.slots.splice(i, 1);
+  delete v.geometry[slot];
+  S.sections.forEach(s => {
+    if (s.variant === LAYOUT_EDIT.vk) {
+      delete s.slots[slot];
+      if (s.imgTransforms) delete s.imgTransforms[slot];
+      if (s.pendingSlots) delete s.pendingSlots[slot];
+    }
+  });
+  if (LAYOUT_EDIT.slot === slot) LAYOUT_EDIT.slot = v.slots[0] || null;
+  renderCanvas();
+  renderSlots();
+}
+
+/* ══════════════════════════════════════════════════════
+   CUSTOM VARIANT MANAGEMENT
+══════════════════════════════════════════════════════ */
+function createCustomVariant(){
+  const k = nextCustomKey();
+  const labelNum = Object.keys(S.customVariants).length + 1;
+  S.customVariants[k] = {
+    label: `Custom ${labelNum}`,
+    slots: ['slot1'],
+    h: 510,
+    custom: true,
+    _slotCounter: 1,
+    geometry: { slot1: { x:10, y:10, w:60, h:60, rot:0, z:1, border:false } },
+  };
+  sec().variant = k;
+  S.selectedSlot = null;
+  saveState();
+  renderAll();
+  enterLayoutEdit();
+}
+
+function duplicateAsCustom(){
+  const src = vdef(); const srcKey = vkey();
+  const k = nextCustomKey();
+  const labelNum = Object.keys(S.customVariants).length + 1;
+  S.customVariants[k] = {
+    label: `Custom ${labelNum} (depuis ${src.label.split('·')[0].trim()})`,
+    slots: [...src.slots],
+    h: src.h,
+    custom: true,
+    _slotCounter: 0,
+    geometry: JSON.parse(JSON.stringify(src.geometry)),
+  };
+  // Migrate any imgTransforms from the active section's current variant slots so the duplicate inherits them
+  sec().variant = k;
+  S.selectedSlot = null;
+  saveState();
+  renderAll();
+  enterLayoutEdit();
+}
+
+function deleteCustomVariant(k){
+  if (!S.customVariants[k]) return;
+  const usedBy = S.sections.filter(s => s.variant === k);
+  let msg = `Supprimer la variante "${S.customVariants[k].label}" ?`;
+  if (usedBy.length) msg += `\n${usedBy.length} section(s) l'utilisent — elles passeront sur V01.`;
+  if (!confirm(msg)) return;
+  if (LAYOUT_EDIT.active && LAYOUT_EDIT.vk === k) exitLayoutEdit({revert:false});
+  usedBy.forEach(s => { s.variant = 'v01'; });
+  delete S.customVariants[k];
+  saveState();
+  renderAll();
+}
+
+function renameCustomVariant(k){
+  const v = S.customVariants[k]; if (!v) return;
+  const name = prompt('Nouveau nom de la variante :', v.label);
+  if (!name || !name.trim()) return;
+  v.label = name.trim();
+  saveState();
+  renderAll();
+}
+
+function setCanvasHeight(val){
+  if (!LAYOUT_EDIT.active) return;
+  const v = S.customVariants[LAYOUT_EDIT.vk]; if (!v) return;
+  const n = parseInt(val, 10);
+  if (isNaN(n)) return;
+  v.h = Math.max(300, Math.min(900, n));
+  renderCanvas();
+}
+
 /* ── Click handler: single = assign, double-click = edit image ─ */
 let _clickTimer = null;
 function handleSlotClick(evt, slot) {
   if (evt.target.closest('.img-edit-btn')) return; // Edit btn handles its own click
+  // Layout-edit mode: click selects slot for layout editing (drag handled by pointerdown)
+  if (LAYOUT_EDIT.active && LAYOUT_EDIT.vk === vkey()) {
+    if (evt.target.closest('.layout-handle')) return;
+    selectLayoutSlot(slot);
+    return;
+  }
   // If in edit mode for this slot, ignore (pan is handled by mousedown)
   if (IMG_EDIT.active && IMG_EDIT.slot === slot) return;
   // If in edit mode for another slot, exit it first
@@ -1344,11 +1844,13 @@ function handleSlotClick(evt, slot) {
 function renderSections() {
   document.getElementById('section-list').innerHTML = S.sections.map(s => {
     const filled = Object.keys(s.slots).length;
-    const total  = VARIANTS[s.variant].slots.length;
+    const vd = getVariant(s.variant) || VARIANTS.v01;
+    const total  = vd.slots.length;
+    const tag = isCustomVariant(s.variant) ? vd.label : s.variant.toUpperCase();
     return `<div class="sec-row ${s.id===S.activeSection?'on':''}" onclick="selectSection('${s.id}')">
       <div class="sec-dot"></div>
       <span>${s.name}</span>
-      <span class="sec-badge">${s.variant.toUpperCase()} · ${filled}/${total} · ${s.photos.length}img</span>
+      <span class="sec-badge">${tag} · ${filled}/${total} · ${s.photos.length}img</span>
     </div>`;
   }).join('');
 }
@@ -1358,29 +1860,43 @@ function renderSections() {
 ══════════════════════════════════════════════════════ */
 function renderSlots() {
   const vd = vdef();
+  const isCustom = vd.custom;
   let filled = 0;
-  document.getElementById('slots-wrap').innerHTML = ['main','second','detail','open','extra'].map(slot => {
+  // For built-ins, also render the 5 known slot rows (with dimmed style for those not in this variant)
+  // For customs, render exactly the variant's slot list.
+  const rows = isCustom
+    ? vd.slots
+    : ['main','second','detail','open','extra'];
+  let rowsHtml = rows.map(slot => {
     const avail = vd.slots.includes(slot);
     const p = slotPh(slot);
     if (p && avail) filled++;
     const isSel = S.selectedSlot === slot && avail;
     const isEditing = IMG_EDIT.active && IMG_EDIT.slot === slot;
+    const bg = slotBg(slot);
     const thumbHtml = p
       ? `<img src="${p.url}" alt="">`
-      : `<div class="slot-prev-color" style="background:${SLOT_BG[slot]};"></div>`;
+      : `<div class="slot-prev-color" style="background:${bg};"></div>`;
     const clearHtml = p ? `<button class="slot-clear" onclick="clearSlot(event,'${slot}')">×</button>` : '';
     const editImgBtn = p && avail ? `<button class="slot-edit-img-btn" onclick="enterEditImageFromPanel(event,'${slot}')" title="Éditer l'image">⌖</button>` : '';
+    const removeBtn = isCustom && LAYOUT_EDIT.active && LAYOUT_EDIT.vk === vkey()
+      ? `<button class="slot-clear" onclick="event.stopPropagation();removeSlot('${slot}')" title="Supprimer le slot">−</button>` : '';
     let rowClass = `slot-row ${isSel?'on':''} ${avail?'':'dim'} ${isEditing?'editing':''}`;
     return `<div class="${rowClass}" data-slot="${slot}" onclick="selectSlot('${slot}')">
       <div class="slot-prev">${thumbHtml}</div>
       <div class="slot-body">
-        <div class="slot-name"><span class="cat-dot" style="background:${SLOT_BG[slot]};"></span>${slot}<span class="sb sb-${slot}">${slot}</span></div>
+        <div class="slot-name"><span class="cat-dot" style="background:${bg};"></span>${slot}<span class="sb sb-${slot}">${slot}</span></div>
         <div class="slot-file" style="${!p?'color:var(--text-muted);':''}">
           ${p ? p.name : (sec().pendingSlots[slot] ? `<span style="color:#F59E0B;">⏳ ${sec().pendingSlots[slot]}</span>` : (avail?'Aucune photo':'—'))}
         </div>
-      </div>${editImgBtn}${clearHtml}
+      </div>${editImgBtn}${removeBtn}${clearHtml}
     </div>`;
   }).join('');
+  if (isCustom && LAYOUT_EDIT.active && LAYOUT_EDIT.vk === vkey()) {
+    rowsHtml += `<button class="btn-add-slot" onclick="addSlotToCurrent()">+ Ajouter un slot</button>`;
+    rowsHtml += `<label class="canvas-h-input">Hauteur canvas <input type="number" min="300" max="900" step="10" value="${vd.h}" onchange="setCanvasHeight(this.value)"> px</label>`;
+  }
+  document.getElementById('slots-wrap').innerHTML = rowsHtml;
   document.getElementById('slots-filled').textContent = `${filled}/${vd.slots.length} assignés`;
 }
 
@@ -1563,30 +2079,79 @@ function renderBank() {
   }
 }
 
-function renderAll() { renderSections(); renderCanvas(); renderSlots(); renderBank(); }
+function renderVariantButtons() {
+  const tb = document.getElementById('variant-toolbar');
+  if (!tb) return;
+  const vk = vkey();
+  const vd = vdef();
+  const isCustom = !!(vd && vd.custom);
+  const builtins = [
+    ['v01','V01 · Base'], ['v02','V02 · Diagonal'],
+    ['v03','V03 · Quad'], ['v05','V05 · Asymétrique'],
+    ['v04','V04 · Penta'],
+  ];
+  const builtinHtml = builtins.map(([k,lbl],i) => {
+    const sep = (i===2 || i===4) ? '<div class="v-sep"></div>' : '';
+    const cls = `vbtn ${k===vk?'on':''}`;
+    return `${sep}<button class="${cls}" data-v="${k}" onclick="setVariant('${k}')">${lbl}</button>`;
+  }).join('');
+  const customsHtml = Object.entries(S.customVariants).map(([k,v]) => {
+    const cls = `vbtn vbtn-custom ${k===vk?'on':''}`;
+    return `<button class="${cls}" data-v="${k}" onclick="setVariant('${k}')" title="${v.label}">${v.label}</button>`;
+  }).join('');
+  const customsBlock = customsHtml ? `<div class="v-sep"></div>${customsHtml}` : '';
+
+  // Right-aligned context actions
+  let actions = '';
+  if (LAYOUT_EDIT.active) {
+    actions = `<button class="vbtn primary" onclick="saveLayoutEdit()" title="Enregistrer (Échap)">✓ Enregistrer</button>
+               <button class="vbtn ghost" onclick="cancelLayoutEdit()">Annuler</button>`;
+  } else if (isCustom) {
+    actions = `<button class="vbtn" onclick="enterLayoutEdit()" title="Éditer le layout (positions, taille, rotation)">✎ Éditer layout</button>
+               <button class="vbtn" onclick="renameCustomVariant('${vk}')" title="Renommer">✎</button>
+               <button class="vbtn danger" onclick="deleteCustomVariant('${vk}')" title="Supprimer cette variante">×</button>`;
+  } else {
+    actions = `<button class="vbtn" onclick="duplicateAsCustom()" title="Dupliquer cette variante en custom éditable">⎘ Dupliquer en custom</button>`;
+  }
+  const newBtn = `<button class="vbtn vbtn-new" onclick="createCustomVariant()" title="Créer une nouvelle variante custom">+ Custom</button>`;
+
+  tb.innerHTML = `
+    ${builtinHtml}
+    ${customsBlock}
+    <div class="v-sep"></div>
+    ${newBtn}
+    <span class="v-info" id="v-info">${vd.slots.length} slots</span>
+    <span class="v-actions">${actions}</span>
+  `;
+}
+
+function renderAll() { renderVariantButtons(); renderSections(); renderCanvas(); renderSlots(); renderBank(); }
 
 /* ══════════════════════════════════════════════════════
    ACTIONS
 ══════════════════════════════════════════════════════ */
 function selectSection(id) {
   exitEditImageSilent();
+  exitLayoutEdit({revert:false});
   S.activeSection = id;
   S.selectedSlot = null;
   S.bankFilter = 'all';
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('on', c.dataset.f === 'all'));
-  document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('on', b.dataset.v === sec().variant));
   updateHint(); renderAll();
 }
 
 function setVariant(v) {
   exitEditImageSilent();
+  exitLayoutEdit({revert:false});
+  if (!getVariant(v)) return;
   sec().variant = v;
-  if (S.selectedSlot && !VARIANTS[v].slots.includes(S.selectedSlot)) S.selectedSlot = null;
-  saveState(); updateHint(); renderCanvas(); renderSlots(); renderSections();
+  if (S.selectedSlot && !getVariant(v).slots.includes(S.selectedSlot)) S.selectedSlot = null;
+  saveState(); updateHint(); renderAll();
 }
 
 function selectSlot(slot) {
   if (IMG_EDIT.active) return; // Don't interfere with image editing
+  if (LAYOUT_EDIT.active) { selectLayoutSlot(slot); return; }
   if (!vdef().slots.includes(slot)) return;
   S.selectedSlot = S.selectedSlot === slot ? null : slot;
   updateHint(); renderCanvas(); renderSlots();
@@ -1693,19 +2258,33 @@ document.getElementById('modal').addEventListener('click', e => { if(e.target===
    EXPORT
 ══════════════════════════════════════════════════════ */
 function buildConfig() {
+  // Export custom variants with full geometry so the consuming site can render them
+  // generically. Built-ins are not exported (the site already has CSS for V01–V05).
+  const customExport = Object.fromEntries(
+    Object.entries(S.customVariants).map(([k,v]) => [k, {
+      label: v.label,
+      slots: [...v.slots],
+      h: v.h,
+      geometry: JSON.parse(JSON.stringify(v.geometry)),
+    }])
+  );
   return {
-    tool:'Overlap Stack Lab v4 — Jardin de Marguerite DS v1.1',
+    tool:'Overlap Stack Lab v5 — Jardin de Marguerite DS v1.1',
     exported:new Date().toISOString(),
-    sections:S.sections.map(s=>({
-      id:s.id, name:s.name, variant:s.variant,
-      variantLabel:VARIANTS[s.variant].label,
-      slots:Object.fromEntries(
-        Object.entries(s.slots)
-          .map(([slot,pid])=>{ const p=s.photos.find(ph=>ph.id===pid); return [slot,p?p.name:null]; })
-          .filter(([,v])=>v!==null)
-      ),
-      imgTransforms: s.imgTransforms || {},
-    })),
+    customVariants: customExport,
+    sections:S.sections.map(s=>{
+      const vd = getVariant(s.variant) || VARIANTS.v01;
+      return {
+        id:s.id, name:s.name, variant:s.variant,
+        variantLabel:vd.label,
+        slots:Object.fromEntries(
+          Object.entries(s.slots)
+            .map(([slot,pid])=>{ const p=s.photos.find(ph=>ph.id===pid); return [slot,p?p.name:null]; })
+            .filter(([,v])=>v!==null)
+        ),
+        imgTransforms: s.imgTransforms || {},
+      };
+    }),
   };
 }
 function doExport() {
@@ -1911,8 +2490,26 @@ function directAssign(slotName, pid) {
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === 'Escape') {
+    if (LAYOUT_EDIT.active) { saveLayoutEdit(); return; }
     if (IMG_EDIT.active) { exitEditImage(); return; }
     S.selectedSlot = null; updateHint(); renderCanvas(); renderSlots();
+    return;
+  }
+  // Layout edit mode: arrows to nudge, Delete to remove slot
+  if (LAYOUT_EDIT.active) {
+    const v = S.customVariants[LAYOUT_EDIT.vk];
+    const slot = LAYOUT_EDIT.slot;
+    const g = v && slot ? v.geometry[slot] : null;
+    if (g) {
+      const step = e.shiftKey ? 5 : 1;
+      let moved = false;
+      if (e.key === 'ArrowLeft')  { g.x = Math.max(0, g.x - step); moved = true; }
+      if (e.key === 'ArrowRight') { g.x = Math.min(100 - g.w, g.x + step); moved = true; }
+      if (e.key === 'ArrowUp')    { g.y = Math.max(0, g.y - step); moved = true; }
+      if (e.key === 'ArrowDown')  { g.y = Math.min(100 - g.h, g.y + step); moved = true; }
+      if (moved) { e.preventDefault(); applySlotGeometry(slot, g); renderLayoutToolbar(); return; }
+      if (e.key === 'Delete' || e.key === 'Backspace') { removeSlot(slot); return; }
+    }
     return;
   }
   // While in image edit mode, +/- for zoom, R for reset
@@ -1931,6 +2528,10 @@ document.addEventListener('keydown', e => {
     const p = slotPh(S.selectedSlot);
     if (p) enterEditImageFromPanel({ stopPropagation:()=>{} }, S.selectedSlot);
   }
+  // L = enter layout edit if on a custom variant
+  if (e.key === 'l' || e.key === 'L') {
+    if (isCustomVariant(vkey())) enterLayoutEdit();
+  }
 });
 
 /* ══════════════════════════════════════════════════════
@@ -1941,6 +2542,7 @@ const LS_KEY = 'overlap-stack-lab-v1';
 function saveState() {
   const data = {
     activeSection: S.activeSection,
+    customVariants: S.customVariants,
     sections: S.sections.map(s => ({
       id: s.id, name: s.name, variant: s.variant,
       slotNames: Object.fromEntries(
@@ -1961,10 +2563,12 @@ function loadState() {
   let data;
   try { data = JSON.parse(localStorage.getItem(LS_KEY)); } catch(e) {}
   if (!data) return;
+  // IMPORTANT: load customVariants FIRST so getVariant() works during section rebuild
+  S.customVariants = data.customVariants || {};
   const restored = data.sections || [];
   S.sections = restored.map(saved => ({
     id: saved.id, name: saved.name,
-    variant: VARIANTS[saved.variant] ? saved.variant : 'v01',
+    variant: getVariant(saved.variant) ? saved.variant : 'v01',
     slots: {}, photos: [], imgTransforms: saved.imgTransforms || {},
     pendingSlots: { ...saved.slotNames, ...saved.pendingSlots },
   }));
